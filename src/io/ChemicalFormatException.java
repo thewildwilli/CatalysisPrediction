@@ -1,4 +1,4 @@
-package reader;
+package io;
 
 /**
  * Created by Ernesto on 23/05/2016.
