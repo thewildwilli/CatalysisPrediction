@@ -2,13 +2,63 @@
 
 package model
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseVector, DenseMatrix}
 
 import collection.JavaConverters._
 
 class Molecule(val Atoms: scala.collection.mutable.Set[Atom]) {
 
   def this(){ this (scala.collection.mutable.Set[Atom]()) }
+
+  def translate(v: DenseVector[Double]): Unit = {
+    for (a <- this.Atoms)
+      a.translate(v)
+  }
+
+  /** Rotates the molecule with respect to X axis around a centre, angle in radians.
+    * The centre must be given as [X, Y, Z] coordinates.
+    * See https://en.wikipedia.org/wiki/Rotation_matrix
+    */
+  def rotateX(centre: DenseVector[Double], angRad: Double) {
+    // Translate the centre to the origin, perform rotation around the origin, then translate back
+    translate(centre * -1.0)
+    transform (DenseMatrix(
+      (1.0, 0.0,                0.0),
+      (0.0, Math.cos(angRad), -Math.sin(angRad)),
+      (0.0, Math.sin(angRad), Math.cos(angRad))))
+    translate(centre)
+  }
+
+  /** Rotates the molecule with respect to Y axis around a centre, angle in radians.
+    * The centre must be given as [X, Y, Z] coordinates.
+    * See https://en.wikipedia.org/wiki/Rotation_matrix
+    */
+  def rotateY(centre: DenseVector[Double], angRad: Double) {
+    translate(centre * -1.0)
+    transform (DenseMatrix(
+      (Math.cos(angRad) , 0.0, Math.sin(angRad)),
+      (0.0              , 1.0, 0.0),
+      (-Math.sin(angRad), 0.0, Math.cos(angRad))))
+    translate(centre)
+  }
+
+  /** Rotates the molecule with respect to Z axis around a centre, angle in radians.
+    * The centre must be given as [X, Y, Z] coordinates.
+    * See https://en.wikipedia.org/wiki/Rotation_matrix
+    */
+  def rotateZ(centre: DenseVector[Double], angRad: Double) {
+    translate(centre * -1.0)
+    transform (DenseMatrix(
+      (Math.cos(angRad) , -Math.sin(angRad), 0.0),
+      (Math.sin(angRad) , Math.cos(angRad) , 0.0),
+      (0.0              , 0.0              , 1.0)))
+    translate(centre)
+  }
+
+  def transform(m: DenseMatrix[Double]) = {
+    for (a <- Atoms)
+      a.transform(m)
+  }
 
   /** Deep copy */
   override def clone = {
@@ -18,9 +68,9 @@ class Molecule(val Atoms: scala.collection.mutable.Set[Atom]) {
     result
   }
 
-  def translate(v: DenseVector[Double]): Unit = {
+  def setElement(e: Char) = {
     for (a <- this.Atoms)
-      a.translate(v)
+      a.element = e
   }
 
   def JAtoms = Atoms.asJava

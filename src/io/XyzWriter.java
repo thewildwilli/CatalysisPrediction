@@ -19,7 +19,7 @@ public class XyzWriter implements MoleculeWriter {
             fw.write(m.Atoms().size() + "\n");        // First line: Atom count
             fw.write(this.path  + "\n");            // Second line: title
             for (Atom a: m.JAtoms())
-                fw.write(String.format("%s %.3f %.3f %.3f%n", "C ", + a.x(), a.y(), a.z()));
+                fw.write(String.format("%s %.3f %.3f %.3f%n", a.element(), + a.x(), a.y(), a.z()));
         }
     }
 }
