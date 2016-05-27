@@ -12,7 +12,9 @@ class Atom (initX: Double, initY: Double, initZ: Double) {
   def y = coords(1)
   def z = coords(2)
 
-  def distTo(other: Atom) = Math.sqrt( Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2) + Math.pow(this.z - other.z,2))
+  def distTo(other: Atom): Double = distTo(other.coords)
+  def distTo(point: DenseVector[Double]) = Math.sqrt( Math.pow(this.x - point(0), 2) + Math.pow(this.y - point(1), 2) + Math.pow(this.z - point(2),2))
+
   def translate(v: DenseVector[Double]): Unit ={
     coords.+=(v)
   }

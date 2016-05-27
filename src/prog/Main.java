@@ -1,5 +1,7 @@
 package prog;// Created by Ernesto on 26/05/2016.
 
+import docking.dockscore.ConstantSurfaceScorer;
+import docking.dockscore.Scorer;
 import docking.docksearch.AtomPairDocker;
 import io.ChemicalFormatException;
 import io.MoleculeReader;
@@ -17,11 +19,12 @@ public class Main {
         Molecule molA = new Pdb2DReader(args[0]).read();
         Molecule molB = new Pdb2DReader(args[1]).read();
 
-        System.out.println("docking...");
-        Molecule molBDocked = AtomPairDocker.dock(molA, molB).b();
+        Scorer scorer = new ConstantSurfaceScorer(1.4);
+        System.out.println("docking with scorer: " + scorer.toString());
+        Molecule molBDocked = AtomPairDocker.dock(molA, molB, scorer).b();
 
         // Now create a molecule with both A's and B's atoms
-        System.out.println("outputting...");
+        System.out.println("outputting to " + args[2]);
         Molecule result = molA.clone();
         result.setElement('O');
         for (Atom bAtom : molBDocked.JAtoms())

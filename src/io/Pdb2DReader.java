@@ -26,13 +26,16 @@ public class Pdb2DReader implements MoleculeReader {
         try (BufferedReader br = new BufferedReader(new FileReader(this.path))) {
             while ((line = br.readLine()) != null) {
                 // If line is an ATOM line, process it
-                if (line.length() >= 4 && line.substring(0, 4).equals("ATOM")) {
-                    if (line.length() < 54)
-                        throw new ChemicalFormatException("ATOM record in PDB file does not have coordinates");
-                    double x = Double.parseDouble(line.substring(30, 38).trim());
-                    double y = Double.parseDouble(line.substring(38, 46).trim());
-                    double z = 0.0;
-                    result.Atoms().add(new Atom(x, y, z));
+                if (line.length() >= 6) {
+                    String header = line.substring(0, 6);
+                    if (header.equals("ATOM  ") || header.equals("HETATM")) {
+                        if (line.length() < 54)
+                            throw new ChemicalFormatException("ATOM record in PDB file does not have coordinates");
+                        double x = Double.parseDouble(line.substring(30, 38).trim());
+                        double y = Double.parseDouble(line.substring(38, 46).trim());
+                        double z = 0.0;
+                        result.Atoms().add(new Atom(x, y, z));
+                    }
                 }
             }
         }

@@ -1,20 +1,20 @@
 package docking.docksearch
 
 import docking.DockingState
-import docking.dockscore.SuperimpositionScorer
+import docking.dockscore.Scorer
 import model.{Atom, Molecule}
-import opt.{HillClimbing, State}
+import opt.{HillClimbing}
 
 // Created by Ernesto on 23/05/2016.
 object AtomPairDocker {
-  def dock(molA: Molecule, molB: Molecule): DockingState = {
+  def dock(molA: Molecule, molB: Molecule, scorer: Scorer): DockingState = {
     var maxScore = Double.NegativeInfinity
     var bestMatch = null.asInstanceOf[AtomPairState]
     var i=0;
 
     for (atomA <- molA.Atoms; atomB <- molB.Atoms) {
-      val optimized = dockPair(molA, atomA, molB, atomB)
-      val score = SuperimpositionScorer.score(optimized)
+      val optimized = dockPair(molA, atomA, molB, atomB, scorer)
+      val score = scorer.score(optimized)
       if (score > maxScore) {
         maxScore = score
         bestMatch = optimized
@@ -25,13 +25,13 @@ object AtomPairDocker {
     bestMatch
   }
 
-  private def dockPair(molA: Molecule, atomA: Atom, molB: Molecule, atomB: Atom) = {
+  private def dockPair(molA: Molecule, atomA: Atom, molB: Molecule, atomB: Atom, scorer: Scorer) = {
     //    translate molB so that the pair (atomA, atomB) overlaps
     molB.translate(atomA.coords - atomB.coords)
 
     //    call hill climbing - neigbouring states are rotations
     val initialState = new AtomPairState(molA, atomA, molB, atomB)
-    HillClimbing.optimize(initialState, 50, SuperimpositionScorer.score).asInstanceOf[AtomPairState]
+    HillClimbing.optimize(initialState, 50, scorer.score).asInstanceOf[AtomPairState]
   }
 }
 

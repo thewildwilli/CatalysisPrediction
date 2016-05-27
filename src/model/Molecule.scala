@@ -60,6 +60,17 @@ class Molecule(val Atoms: scala.collection.mutable.Set[Atom]) {
       a.transform(m)
   }
 
+  def getGeometricCentre = {
+    // Add all coords vectors together and then divide by the number of atoms. Can be optimized caching.
+    (Atoms.map(a => a.coords).reduce(_+_))./(Atoms.size + 0.0)
+  }
+
+  /** The molecule radius is the distance from the geometricCentre to its farthest atom */
+  def getRadius = {
+    val centre = getGeometricCentre
+    Atoms.map(a => a.distTo(centre)).max
+  }
+
   /** Deep copy */
   override def clone = {
     val result = new Molecule()

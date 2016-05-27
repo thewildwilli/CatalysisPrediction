@@ -4,7 +4,7 @@ import docking.DockingState
 import opt.State
 
 // Created by Ernesto on 23/05/2016.
-object SuperimpositionScorer {
+object SuperimpositionScorer extends Scorer {
 
   /** Returns 1 when all atoms in a are superimposed to some atom in b
     * Uses exp(-distance) to score each atom. O(n2) */
