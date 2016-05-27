@@ -1,12 +1,12 @@
 package docking.docksearch
 
-import docking.DockingState
+import docking.{Docker, DockingState}
 import docking.dockscore.Scorer
 import model.{Atom, Molecule}
-import opt.{HillClimbing}
+import opt.HillClimbing
 
 // Created by Ernesto on 23/05/2016.
-object AtomPairDocker {
+object AtomPairDocker extends Docker {
   def dock(molA: Molecule, molB: Molecule, scorer: Scorer): DockingState = {
     var maxScore = Double.NegativeInfinity
     var bestMatch = null.asInstanceOf[AtomPairState]
