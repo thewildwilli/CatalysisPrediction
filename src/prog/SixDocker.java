@@ -1,11 +1,8 @@
 package prog;// Created by Ernesto on 27/05/2016.
 
 import docking.Docker;
-import docking.dockscore.ConstantSurfaceScorer;
+import docking.dockscore.SurfaceDistanceScorer;
 import docking.dockscore.Scorer;
-import docking.dockscore.SuperimpositionScorer$;
-import docking.docksearch.AtomPairDocker;
-import docking.docksearch.SixInitialsDocker;
 import docking.docksearch.SixInitialsDocker$;
 import io.ChemicalFormatException;
 import io.Pdb2DReader;
@@ -22,7 +19,7 @@ public class SixDocker {
         Molecule molA = new Pdb2DReader(args[0]).read();
         Molecule molB = new Pdb2DReader(args[1]).read();
 
-        Scorer scorer = new ConstantSurfaceScorer(1.4);
+        Scorer scorer = new SurfaceDistanceScorer();
         Docker docker = SixInitialsDocker$.MODULE$;
         System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass().getName(), scorer.toString()));
         Molecule molBDocked = docker.dock(molA, molB, scorer).b();
@@ -30,7 +27,7 @@ public class SixDocker {
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);
         Molecule result = molA.clone();
-        result.setElement('O');
+        result.setElement("O");
         for (Atom bAtom : molBDocked.JAtoms())
             result.JAtoms().add(bAtom);
 

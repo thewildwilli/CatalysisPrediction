@@ -1,29 +1,43 @@
 package opt
 
 // Created by Ernesto on 23/05/2016.
-object HillClimbing {
+object HillClimbing{
+  val maxDown = 10; // How many times are we allowed to go down before stopping?
 
   def optimize(initState: State, maxIters: Int, scoring: State => Double): State = {
     var currState = initState
-    var maxScore = Double.NegativeInfinity
+    var currScore = Double.NegativeInfinity
 
-    for (i <- 0 to maxIters){
+    var bestState = initState
+    var bestScore = Double.NegativeInfinity
+
+    var downCount = 0
+
+    for (i <- 0 to maxIters) {
       var bestNeighbour = null.asInstanceOf[State]
       var bestNeighbourScore = Double.NegativeInfinity
-      for (n <- currState.getNeighbours){
+      for (n <- currState.getNeighbours) {
         val score = scoring(n);
-        if (score > bestNeighbourScore){
+        if (score > bestNeighbourScore) {
           bestNeighbourScore = score
           bestNeighbour = n
         }
       }
 
-      if (bestNeighbourScore < maxScore) // reached local maxima and now going down
-        return currState
+      if (bestNeighbourScore < currScore) { // reached local maximum and now going down
+        if (downCount > maxDown)
+          return bestState
+        downCount += 1
+      }
 
-      currState = bestNeighbour
-      maxScore = bestNeighbourScore
+      currState = bestNeighbour             // move to best neighbour
+      currScore = bestNeighbourScore
+
+      if (currScore > bestScore) {
+        bestScore = currScore
+        bestState = currState
+      }
     }
-    currState
+    bestState
   }
 }

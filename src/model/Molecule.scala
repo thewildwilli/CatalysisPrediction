@@ -6,9 +6,13 @@ import breeze.linalg.{DenseVector, DenseMatrix}
 
 import collection.JavaConverters._
 
-class Molecule(val Atoms: scala.collection.mutable.Set[Atom]) {
+class Molecule(val Atoms: scala.collection.mutable.Buffer[Atom]) {
 
-  def this(){ this (scala.collection.mutable.Set[Atom]()) }
+  def this(l: Seq[Atom]) {this (l.toBuffer[Atom])}
+  def this(){ this (new scala.collection.mutable.ArrayBuffer[Atom]())}
+
+
+  def apply(i: Int) = Atoms(i)
 
   def translate(v: DenseVector[Double]): Unit = {
     for (a <- this.Atoms)
@@ -71,17 +75,21 @@ class Molecule(val Atoms: scala.collection.mutable.Set[Atom]) {
     Atoms.map(a => a.distTo(centre)).max
   }
 
-  /** Deep copy */
-  override def clone = {
-    val result = new Molecule()
-    for (a <- this.Atoms)
-      result.Atoms.add(a.clone())
-    result
+  def computeSurfaceAtoms3D = computeSurfaceAtoms(6)
+  def computeSurfaceAtoms2D = computeSurfaceAtoms(4)
+  private def computeSurfaceAtoms(maxNeighbours: Int) = {
+    for (a <- Atoms) {
+      a.isSurface = Atoms.filter(b => (b ne a) && a.distTo(b) <= 2.16).size <= maxNeighbours //ne = reference inequality. 216 is C=C bond length.
+    }
   }
 
-  def setElement(e: Char) = {
+
+  /** Deep copy */
+  override def clone = new Molecule(this.Atoms.map(a => a.clone))
+
+  def setElement(e: String) = {
     for (a <- this.Atoms)
-      a.element = e
+      a.setElement(e)
   }
 
   def JAtoms = Atoms.asJava

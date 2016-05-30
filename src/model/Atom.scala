@@ -2,11 +2,18 @@
 package model
 import breeze.linalg.{DenseMatrix, DenseVector}
 
-/** Distances in Armstrongs */
-class Atom (initX: Double, initY: Double, initZ: Double) {
+/** Distances in Angstrongs */
+class Atom (elem: String, initX: Double, initY: Double, initZ: Double) {
 
+  setElement(elem)
   var coords = DenseVector(initX, initY, initZ)
-  var element = 'C'
+  var isSurface = false
+
+  var _element = "C"
+  var _radius = 1.4
+  def element = _element
+  def setElement(e: String) = {_element = e; _radius = VanDerWaalsRadii(e)}
+  def radius = _radius
 
   def x = coords(0)
   def y = coords(1)
@@ -23,6 +30,6 @@ class Atom (initX: Double, initY: Double, initZ: Double) {
     coords = m * coords
   }
 
-  override def clone = new Atom(this.x, this.y, this.z)
+  override def clone = new Atom("C", this.x, this.y, this.z)
   override def toString: String = "Atom at " + x + ", " + y + ", " + z
 }

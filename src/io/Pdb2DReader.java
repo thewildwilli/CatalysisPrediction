@@ -34,7 +34,7 @@ public class Pdb2DReader implements MoleculeReader {
                         double x = Double.parseDouble(line.substring(30, 38).trim());
                         double y = Double.parseDouble(line.substring(38, 46).trim());
                         double z = 0.0;
-                        result.Atoms().add(new Atom(x, y, z));
+                        result.JAtoms().add(new Atom("C", x, y, z));
                     }
                 }
             }
