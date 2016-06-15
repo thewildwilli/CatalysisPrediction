@@ -1,10 +1,10 @@
 package docking.docksearch
 
 import breeze.linalg.DenseVector
-import docking.{Docker, DockingState}
+import docking.{Decaying, Docker, DockingState}
 import docking.dockscore.Scorer
-import model.{Atom, Molecule}
-import opt.HillClimbing
+import model.{Molecule}
+import opt.{EnhHillClimbing}
 
 /**   This docker places molecule B in for initial positions with respect
   *   to molecule A: to the right, left, over, under.
@@ -27,15 +27,17 @@ object FourInitialsDocker2D extends Docker {
   private def performDock(molA: Molecule, molB: Molecule, scorer: Scorer): DockingState = {
     val initialState = new AllNeighboursState2D(molA, molB)
     print("performDock...")
-    HillClimbing.optimize(initialState, 1000, scorer.score).asInstanceOf[AllNeighboursState2D]
+    EnhHillClimbing.optimize(initialState, 1000, scorer.score).asInstanceOf[AllNeighboursState2D]
   }
 
 }
 
-class AllNeighboursState2D(molA: Molecule, molB: Molecule) extends DockingState(molA, molB) {
 
-  final val DeltaAngle = Math.toRadians(20) // 20 degrees in radians
-  final val DeltaSpace = 0.1 // Angstrong
+/** DefaultAngle: in radians. DefaultSpace: in Angstroms.
+ */
+class AllNeighboursState2D(molA: Molecule, molB: Molecule,
+                           var deltaAngle: Double = Math.toRadians(20), var deltaSpace: Double = 0.1)
+                           extends DockingState(molA, molB) with Decaying {
 
   /** Neighbours are all rotations of molecule bMol around atom bAtom
     * by DeltaAngle in both directions in the Z axis, plus all translations in X and Y.
@@ -45,13 +47,20 @@ class AllNeighboursState2D(molA: Molecule, molB: Molecule) extends DockingState(
     */
   override def getNeighbours = {
     val centre = molB.getGeometricCentre
-    val fwZ = molB.clone; fwZ.rotateZ(centre, DeltaAngle)   // forward rotation on Z axis
-    val bwZ = molB.clone; bwZ.rotateZ(centre, -DeltaAngle)  // backward rotation on Z axis
+    val fwZ = molB.clone; fwZ.rotateZ(centre, deltaAngle)   // forward rotation on Z axis
+    val bwZ = molB.clone; bwZ.rotateZ(centre, -deltaAngle)  // backward rotation on Z axis
 
-    val fwtX = molB.clone; fwtX.translate(DenseVector(DeltaSpace, 0.0, 0.0))   // forward translation on X axis
-    val bwtX = molB.clone; bwtX.translate(DenseVector(-DeltaSpace, 0.0, 0.0))  // backward translation on X axis
-    val fwtY = molB.clone; fwtY.translate(DenseVector(0.0, DeltaSpace, 0.0))   // forward translation on Y axis
-    val bwtY = molB.clone; bwtY.translate(DenseVector(0.0, -DeltaSpace, 0.0))  // backward translation on Y axis
-    List(fwtX, bwtX, fwtY, bwtY,fwZ, bwZ).map(b => new AllNeighboursState2D(molA, b))
+    val fwtX = molB.clone; fwtX.translate(DenseVector(deltaSpace, 0.0, 0.0))   // forward translation on X axis
+    val bwtX = molB.clone; bwtX.translate(DenseVector(-deltaSpace, 0.0, 0.0))  // backward translation on X axis
+    val fwtY = molB.clone; fwtY.translate(DenseVector(0.0, deltaSpace, 0.0))   // forward translation on Y axis
+    val bwtY = molB.clone; bwtY.translate(DenseVector(0.0, -deltaSpace, 0.0))  // backward translation on Y axis
+    List(fwtX, bwtX, fwtY, bwtY,fwZ, bwZ).map(b => new AllNeighboursState2D(molA, b, deltaAngle, deltaSpace))
+  }
+
+  /** Decay parameters by half */
+  override def decayRate: Unit = {
+    println("decaying...")
+    deltaAngle = deltaAngle / 2.0
+    deltaSpace = deltaSpace / 2.0
   }
 }

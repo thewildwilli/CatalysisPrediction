@@ -1,6 +1,7 @@
 package prog;// Created by Ernesto on 27/05/2016.
 
 import docking.Docker;
+import docking.DockingState;
 import docking.dockscore.SurfaceDistanceScorer;
 import docking.dockscore.Scorer;
 import docking.docksearch.FourInitialsDocker2D$;
@@ -9,6 +10,7 @@ import io.Pdb2DReader;
 import io.XyzWriter;
 import model.Atom;
 import model.Molecule;
+import opt.State;
 
 import java.io.IOException;
 
@@ -19,10 +21,13 @@ public class FourDocker {
         Molecule molA = new Pdb2DReader(args[0]).read();
         Molecule molB = new Pdb2DReader(args[1]).read();
 
-        Scorer scorer = new SurfaceDistanceScorer();
+        Scorer scorer = new SurfaceDistanceScorer(0);
         Docker docker = FourInitialsDocker2D$.MODULE$;
         System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass().getName(), scorer.toString()));
-        Molecule molBDocked = docker.dock(molA, molB, scorer).b();
+
+        State finalState = docker.dock(molA, molB, scorer);
+        System.out.println("Final score: " + scorer.score(finalState));
+        Molecule molBDocked = ((DockingState)finalState).b();
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

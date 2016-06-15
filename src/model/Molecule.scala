@@ -2,14 +2,15 @@
 
 package model
 
-import breeze.linalg.{DenseVector, DenseMatrix}
+import breeze.linalg.{DenseMatrix, DenseVector}
 
 import collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
-class Molecule(val Atoms: scala.collection.mutable.Buffer[Atom]) {
+class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
 
-  def this(l: Seq[Atom]) {this (l.toBuffer[Atom])}
-  def this(){ this (new scala.collection.mutable.ArrayBuffer[Atom]())}
+  def this(l: Seq[Atom]) { this(new ArrayBuffer[Atom]()); for (a <- l) this.Atoms += a; }
+  def this(){ this (new ArrayBuffer[Atom]())}
 
 
   def apply(i: Int) = Atoms(i)
@@ -20,10 +21,10 @@ class Molecule(val Atoms: scala.collection.mutable.Buffer[Atom]) {
   }
 
   /** Rotates the molecule with respect to X axis around a centre, angle in radians.
-    * The centre must be given as [X, Y, Z] coordinates.
+    * The centre must be given as [X, Y, Z] coordinates. Returns this same object.
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
-  def rotateX(centre: DenseVector[Double], angRad: Double) {
+  def rotateX(centre: DenseVector[Double], angRad: Double) = {
     // Translate the centre to the origin, perform rotation around the origin, then translate back
     translate(centre * -1.0)
     transform (DenseMatrix(
@@ -31,32 +32,35 @@ class Molecule(val Atoms: scala.collection.mutable.Buffer[Atom]) {
       (0.0, Math.cos(angRad), -Math.sin(angRad)),
       (0.0, Math.sin(angRad), Math.cos(angRad))))
     translate(centre)
+    this
   }
 
   /** Rotates the molecule with respect to Y axis around a centre, angle in radians.
-    * The centre must be given as [X, Y, Z] coordinates.
+    * The centre must be given as [X, Y, Z] coordinates. Returns this same object.
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
-  def rotateY(centre: DenseVector[Double], angRad: Double) {
+  def rotateY(centre: DenseVector[Double], angRad: Double) = {
     translate(centre * -1.0)
     transform (DenseMatrix(
       (Math.cos(angRad) , 0.0, Math.sin(angRad)),
       (0.0              , 1.0, 0.0),
       (-Math.sin(angRad), 0.0, Math.cos(angRad))))
     translate(centre)
+    this
   }
 
   /** Rotates the molecule with respect to Z axis around a centre, angle in radians.
-    * The centre must be given as [X, Y, Z] coordinates.
+    * The centre must be given as [X, Y, Z] coordinates. Returns this same object.
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
-  def rotateZ(centre: DenseVector[Double], angRad: Double) {
+  def rotateZ(centre: DenseVector[Double], angRad: Double) = {
     translate(centre * -1.0)
     transform (DenseMatrix(
       (Math.cos(angRad) , -Math.sin(angRad), 0.0),
       (Math.sin(angRad) , Math.cos(angRad) , 0.0),
       (0.0              , 0.0              , 1.0)))
     translate(centre)
+    this
   }
 
   def transform(m: DenseMatrix[Double]) = {
@@ -90,6 +94,13 @@ class Molecule(val Atoms: scala.collection.mutable.Buffer[Atom]) {
   def setElement(e: String) = {
     for (a <- this.Atoms)
       a.setElement(e)
+  }
+
+  /** Modifies this molecule and returns is */
+  def importM(b: Molecule) = {
+    for (bAtom <- b.Atoms)
+      this.Atoms.append(b.clone)
+    this
   }
 
   def JAtoms = Atoms.asJava

@@ -1,8 +1,10 @@
 package opt
 
+import docking.Decaying
+
 // Created by Ernesto on 23/05/2016.
-object HillClimbing{
-  val maxDown = 0; // How many times are we allowed to go down before stopping?
+object EnhHillClimbing{
+  val maxDown = 10; // How many times are we allowed to go down before stopping?
 
   def optimize(initState: State, maxIters: Int, scoring: State => Double): State = {
     var currState = initState
@@ -28,6 +30,10 @@ object HillClimbing{
         if (downCount > maxDown)
           return bestState
         downCount += 1
+
+        // went one step downhill, decay rate:
+        if (bestNeighbour.isInstanceOf[Decaying])
+          bestNeighbour.asInstanceOf[Decaying].decayRate
       }
 
       currState = bestNeighbour             // move to best neighbour

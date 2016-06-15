@@ -10,7 +10,7 @@ import opt.State
   * The problem is that atoms that are in the same place will be scored
   * negative infinite.
   * */
-class SurfaceDistanceScorer extends Scorer {
+class SurfaceDistanceScorer(val surface: Double = 1.4) extends Scorer {
 
   def score(state: State) = {
     val s = state.asInstanceOf[DockingState]
@@ -18,13 +18,15 @@ class SurfaceDistanceScorer extends Scorer {
     for (atomA <- s.a.Atoms; atomB <- s.b.Atoms) {
       score += scoreDist(atomA, atomB)
     }
-    score / (s.a.Atoms.size * s.b.Atoms.size)     // score as a fraction. 1 = perfect superposition.
+    score / (s.a.Atoms.size * s.b.Atoms.size)
   }
 
   def scoreDist(atomA: Atom, atomB: Atom) = {
-    val radii = atomA.radius + atomB._radius
+    val radii = atomA.radius + atomB._radius + 2 * surface   // optimal distance
     val d = atomA.distTo(atomB)
-    val dNormalized = (d/radii)*1.41421356237310
+
+    // Max is reached at sqrt(2) so normalize input so that optimal distance -> sqrt(2)
+    val dNormalized = (d/radii)*Math.sqrt(2.0)
     expsquare(dNormalized)
   }
 
@@ -39,8 +41,7 @@ class SurfaceDistanceScorer extends Scorer {
     base*(dragdown+1) - (dragdown/2-1)
   }*/
 
-  // Max is reached at sqrt(2) so normalize input so that radiusA+radiusB -> sqrt(2)
-  def expsquare(x: Double) = 10*Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
+  private def expsquare(x: Double) = 10*Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
 
   override def toString: String = "Surface distance scorer "
 }
