@@ -56,7 +56,7 @@ object JmolEmbedTest {
     new XyzWriter(args(2)).write(docked.b)      // write docked b to file
     jmolPanel.openAndColor((args(0), "gray"), (args(2), "red"))  // show original a and modified b
 
-    println("done")
+
 
   }
 }

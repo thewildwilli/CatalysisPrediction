@@ -15,23 +15,27 @@ object DockMain {
   val usage = "USAGE: scala DockMain -a (path to A, pdb format) " +
     "-b (path to B, pdb format) " +
     "-out (B's output path, xyz format) " +
-    "-docker (atompair|forcevector)"
+    "-docker (atompair|forcevector) [--consolelog]"
 
   val frame = new JmolFrame(500, 500, true)
   val jmolPanel = frame.getPanel
 
   def showActions(chan: ?[Any], panel: JmolPanel, scorer: Scorer) = proc {
     repeat {
-      chan? match {
+      val s = chan? match {
         case a: Action => val cmd = JmolCmds.cmd(a); panel.execute(cmd); cmd
         case d: DockingState => s"score: ${scorer.score(d)}"
         case other => other.toString
       }
+      if (DockArgs.consoleLog)
+        println(s)
       ()
     }
   }
 
   def main(args: Array[String]): Unit = {
+    val startTime = System.currentTimeMillis()
+
     parseArgs(args)
     val molA: Molecule = new PdbReader(DockArgs.pathA).read
     val molB: Molecule = new PdbReader(DockArgs.pathB).read
@@ -52,6 +56,8 @@ object DockMain {
 
     new XyzWriter(DockArgs.pathOut).write(docked.b)      // write docked b to file
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathOut, "red"))  // show original a and modified b
+
+    println(s"Finished with score: ${scorer.score(docked)}, total time: ${System.currentTimeMillis()-startTime}ms")
   }
 
   def parseArgs(args: Array[String]) = {
@@ -65,6 +71,7 @@ object DockMain {
           case "-out" => DockArgs.pathOut = args(i + 1); i += 2
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
+          case "--consolelog" => DockArgs.consoleLog = true; i += 1
           case _ => sys.error(usage)
         }
       }
@@ -91,6 +98,7 @@ object DockMain {
     var pathOut = ""
     var dockerName = ""
     var scorerName = ""
+    var consoleLog = false
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != ""
   }
 

@@ -7,7 +7,7 @@ import docking.dockscore.Scorer
 import docking._
 import opt._
 import io.threadcso._
-import model.{Atom, Molecule}
+import model._
 
 // Created by Ernesto on 08/06/2016.
 // FIX THE DESIGN A BIT!!!
@@ -16,45 +16,44 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
   val initialDeltaSpace = 1.0
 
   override def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]) = {
+    val radius = molA.getRadius + molB.getRadius
+    val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(30))
 
-    val initialDistance = Math.max(molA.getRadius, molB.getRadius)
-
-    val right = DenseVector(initialDistance, 0.0, 0.0)
-    val left = DenseVector(-initialDistance, 0.0, 0.0)
-    val over = DenseVector(0.0, initialDistance, 0.0)
-    val under = DenseVector(0.0, -initialDistance, 0.0)
-
-    List(over, under, left, right).map(pos => {
+    initialConfigs.map(pos => {
       log!Reset
       val b = molB.clone
 
       b.translate(pos)
       log!new Translate(pos)
 
-      forceVectorDock(molA, b, scorer, log)
+      forceVectorDock(molA, b, scorer, 0.000001, log)
     }).maxBy(scorer.score)
   }
 
   /**  Docks b into a from b's initial position and orientation, using force vectors
     */
   private def forceVectorDock(molA: Molecule, molB: Molecule,
-                              scorer: Scorer, log: ![Action]) = {
+                              scorer: Scorer, threshold: Double,
+                              log: ![Action]) = {
 
     // get the force of each atom
     // translate a rotate accordingly
     // for a test, just translate the entire molecule
 
-    var deltaAngle = initialDeltaAngle
-    var deltaSpace = initialDeltaSpace
+    var maxAngle = initialDeltaAngle
+    var maxTranslate = initialDeltaSpace
+
+    var currScore = Double.NegativeInfinity
     var lastScore = Double.NegativeInfinity
     val state = new DockingState(molA, molB)
 
-    var decays = 0
-    while (decays <= maxDecays) {
-      val forces = getForces(molA, molB);  // it is a list of pairs (atomB, force)
+    while (lastScore == Double.NegativeInfinity || Math.abs(currScore - lastScore) > threshold) {
+      lastScore = currScore
 
+      val forces = getForces(molA, molB);  // it is a list of pairs (atomB, force)
       val netForce = forces.map{ case (atomB, force) => force}.reduce((a, b) => a + b)
-      val translation = (netForce * deltaSpace) / norm(netForce)
+      val tranlateDistance = Math.min(norm(netForce), maxTranslate)
+      val translation = (netForce * tranlateDistance) / norm(netForce)
 
       // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
       val torques = forces.map { case (atomB, force) =>
@@ -62,21 +61,22 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
         linalg.cross(r, force)
       }
       val netTorque = torques.reduce((a, b) => a + b)     // add all torques together
-      val axis = netTorque / norm(netTorque) // normalize
+      val netTorqueNorm = norm(netTorque)
+      val axis = netTorque / netTorqueNorm // normalize
+      val angle = Math.min(netTorqueNorm, maxAngle)
 
       molB.translate(translation)
       log!new Translate(translation)
 
-      molB.rotate(molB.getGeometricCentre, axis, deltaAngle)
-      log!new Rotate(molB.getGeometricCentre, axis, deltaAngle)
+      molB.rotate(molB.getGeometricCentre, axis, angle)
+      log!new Rotate(molB.getGeometricCentre, axis, angle)
 
-      val score = scorer.score(state)
-      if (score < lastScore){
-        deltaAngle = deltaAngle / 2.0
-        deltaSpace = deltaSpace / 2.0
-        decays += 1
+      currScore = scorer.score(state)
+      if (currScore < lastScore){
+        maxAngle = maxAngle * 0.9
+        maxTranslate = maxTranslate * 0.9
+        //decays += 1
       }
-      lastScore = score
     }
     state
   }
