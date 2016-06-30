@@ -1,4 +1,4 @@
-package test;// Created by Ernesto on 26/05/2016.
+package prog;// Created by Ernesto on 26/05/2016.
 
 import io.*;
 import model.Molecule;

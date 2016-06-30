@@ -18,15 +18,15 @@ class SurfaceDistanceScorer(val surface: Double = 1.4) extends Scorer {
     for (atomA <- s.a.Atoms; atomB <- s.b.Atoms) {
       score += scoreDist(atomA, atomB)
     }
-    score / (s.a.Atoms.size * s.b.Atoms.size)
+    score / (s.a.Atoms.size * s.b.Atoms.size).toDouble
   }
 
   def scoreDist(atomA: Atom, atomB: Atom) = {
-    val radii = atomA.radius + atomB._radius + 2 * surface   // optimal distance
-    val d = atomA.distTo(atomB)
+    val optimal = atomA.radius + atomB.radius + 2 * surface   // optimal distance
+    val actual = atomA.distTo(atomB)
 
     // Max is reached at sqrt(2) so normalize input so that optimal distance -> sqrt(2)
-    val dNormalized = (d/radii)*Math.sqrt(2.0)
+    val dNormalized = actual * Math.sqrt(2.0) / optimal
     expsquare(dNormalized)
   }
 
@@ -41,7 +41,7 @@ class SurfaceDistanceScorer(val surface: Double = 1.4) extends Scorer {
     base*(dragdown+1) - (dragdown/2-1)
   }*/
 
-  private def expsquare(x: Double) = 10*Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
+  private def expsquare(x: Double) = 10* Math.exp(-Math.pow(x,2)) * (Math.pow(x,2)-1)
 
   override def toString: String = "Surface distance scorer "
 }

@@ -25,7 +25,7 @@ public class SixDocker {
         Docker docker = SixInitialsDocker$.MODULE$;
         System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass().getName(), scorer.toString()));
 
-        State finalState = docker.dock(molA, molB, scorer);
+        State finalState = docker.dock(molA, molB, scorer, null);
         System.out.println("Final score: " + scorer.score(finalState));
         Molecule molBDocked = ((DockingState)finalState).b();
 

@@ -10,7 +10,7 @@ import opt.State
 class ForceVectorDocking {
   def main(args: Array[String]) {
     // Input 2 models, dock them, output them together. We might also need to output the entire rotate / translate operation.
-    System.out.println("ForceVectorDocking...")
+    /*System.out.println("ForceVectorDocking...")
     val molA: Molecule = new Pdb2DReader(args(0)).read
     val molB = new Molecule();
     molB.Atoms.append(new Atom("O", 100, 100, 100))
@@ -30,6 +30,6 @@ class ForceVectorDocking {
     import scala.collection.JavaConversions._
     for (bAtom <- molBDocked.JAtoms) result.JAtoms.add(bAtom)
 
-    new XyzWriter(args(2)).write(result)
+    new XyzWriter(args(2)).write(result)*/
   }
 }

@@ -27,7 +27,7 @@ public class AtomPairWithSurfaceScoring {
         Scorer scorer = new SurfaceDistanceScorer(0);
         Docker docker = SurfaceAtomPairsWithTranslationDocker$.MODULE$;
         System.out.println("docking with scorer: " + scorer.toString());
-        Molecule molBDocked = docker.dock(molA, molB, scorer).b();
+        Molecule molBDocked = docker.dock(molA, molB, scorer, null).b();
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

@@ -1,42 +1,38 @@
 package opt
 
+import io.threadcso._
+
 // Created by Ernesto on 23/05/2016.
 object HillClimbing{
-  val maxDown = 0; // How many times are we allowed to go down before stopping?
 
-  def optimize(initState: State, maxIters: Int, scoring: State => Double): State = {
-    var currState = initState
-    var currScore = Double.NegativeInfinity
-
-    var bestState = initState
+  def optimize[S](init: S, actions: (S) => Seq[Action],
+                           transition: (S, Action) => S,
+                           scoring: S => Double,
+                           maxIters: Int,
+                           actionsOut: ![Action] = null): S = {
+    var bestState = init
     var bestScore = Double.NegativeInfinity
 
-    var downCount = 0
-
     for (i <- 0 to maxIters) {
-      var bestNeighbour = null.asInstanceOf[State]
+      var bestAction = null.asInstanceOf[Action]
+      var bestNeighbour = null.asInstanceOf[S]
       var bestNeighbourScore = Double.NegativeInfinity
-      for (n <- currState.getNeighbours) {
-        val score = scoring(n);
+      for (a <- actions(bestState)) {
+        val n = transition(bestState, a)
+        val score = scoring(n)
         if (score > bestNeighbourScore) {
+          bestAction = a
           bestNeighbourScore = score
           bestNeighbour = n
         }
       }
 
-      if (bestNeighbourScore < currScore) { // reached local maximum and now going down
-        if (downCount > maxDown)
+      if (bestNeighbourScore < bestScore) // reached local maximum and now going down
           return bestState
-        downCount += 1
-      }
 
-      currState = bestNeighbour             // move to best neighbour
-      currScore = bestNeighbourScore
-
-      if (currScore > bestScore) {
-        bestScore = currScore
-        bestState = currState
-      }
+      bestState = bestNeighbour             // move to best neighbour
+      bestScore = bestNeighbourScore
+      if (actionsOut != null) actionsOut!bestAction // log actions chosen
     }
     bestState
   }

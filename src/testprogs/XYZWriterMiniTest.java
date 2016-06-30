@@ -1,18 +1,17 @@
-package test;
+package testprogs;// Created by Ernesto on 23/05/2016.
 
-import model.*;
 import io.ChemicalFormatException;
 import io.MoleculeReader;
 import io.PdbReader;
+import io.XyzWriter;
+import model.Molecule;
 
 import java.io.IOException;
 
-// Created by Ernesto on 23/05/2016.
-public class PdbReaderMiniTest {
+public class XYZWriterMiniTest {
     public static void main(String[] args) throws IOException, ChemicalFormatException {
         MoleculeReader reader = new PdbReader(args[0]);
         Molecule m = reader.read();
-        for (Atom a: m.JAtoms() )
-            System.out.println(a.toString());
+        new XyzWriter(args[0] + ".xyz").write(m);
     }
 }

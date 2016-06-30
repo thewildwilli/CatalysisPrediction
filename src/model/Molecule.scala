@@ -20,6 +20,18 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
       a.translate(v)
   }
 
+  def rotate(centre: DenseVector[Double], axis: DenseVector[Double],
+             angRad: Double) = {
+    translate(centre * -1.0)
+    transform(Geometry.rotate(axis, angRad))
+    translate(centre)
+    /*transform ( Geometry.compose(
+      Geometry.translate(centre * -1.0),
+      Geometry.rotate(axis, angRad),
+      Geometry.translate(centre)
+    ))*/
+  }
+
   /** Rotates the molecule with respect to X axis around a centre, angle in radians.
     * The centre must be given as [X, Y, Z] coordinates. Returns this same object.
     * See https://en.wikipedia.org/wiki/Rotation_matrix
@@ -70,7 +82,7 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
 
   def getGeometricCentre = {
     // Add all coords vectors together and then divide by the number of atoms. Can be optimized caching.
-    (Atoms.map(a => a.coords).reduce(_+_))./(Atoms.size + 0.0)
+    Atoms.map(a => a.coords).reduce(_+_) ./ (Atoms.size + 0.0)
   }
 
   /** The molecule radius is the distance from the geometricCentre to its farthest atom */
@@ -79,11 +91,11 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
     Atoms.map(a => a.distTo(centre)).max
   }
 
-  def computeSurfaceAtoms3D = computeSurfaceAtoms(6)
-  def computeSurfaceAtoms2D = computeSurfaceAtoms(4)
+  def computeSurfaceAtoms3D() = computeSurfaceAtoms(6)
+  def computeSurfaceAtoms2D() = computeSurfaceAtoms(4)
   private def computeSurfaceAtoms(maxNeighbours: Int) = {
     for (a <- Atoms) {
-      a.isSurface = Atoms.filter(b => (b ne a) && a.distTo(b) <= 2.16).size <= maxNeighbours //ne = reference inequality. 216 is C=C bond length.
+      a.isSurface = Atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= maxNeighbours //ne = reference inequality. 216 is C=C bond length.
     }
   }
 
@@ -96,10 +108,10 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
       a.setElement(e)
   }
 
-  /** Modifies this molecule and returns is */
+  /** Adds clones of all atoms from b to this. Modifies this molecule and returns itself */
   def importM(b: Molecule) = {
     for (bAtom <- b.Atoms)
-      this.Atoms.append(b.clone)
+      this.Atoms.append(bAtom.clone)
     this
   }
 

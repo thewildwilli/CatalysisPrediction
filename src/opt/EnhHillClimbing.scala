@@ -1,29 +1,44 @@
 package opt
 
 import docking.Decaying
+import io.threadcso._
 
 // Created by Ernesto on 23/05/2016.
 object EnhHillClimbing{
   val maxDown = 10; // How many times are we allowed to go down before stopping?
 
-  def optimize(initState: State, maxIters: Int, scoring: State => Double): State = {
-    var currState = initState
+  def optimize[S](init: S, actions: (S) => Seq[Action],
+                  transition: (S, Action) => S,
+                  decay: () => Unit,
+                  scoring: S => Double,
+                  maxIters: Int,
+                  log: ![Any]): S = {
+
+    var currState = init
     var currScore = Double.NegativeInfinity
 
-    var bestState = initState
+    var bestState = init
     var bestScore = Double.NegativeInfinity
 
     var downCount = 0
 
     for (i <- 0 to maxIters) {
-      var bestNeighbour = null.asInstanceOf[State]
+      var bestAction = null.asInstanceOf[Action]
+      var bestNeighbour = null.asInstanceOf[S]
       var bestNeighbourScore = Double.NegativeInfinity
-      for (n <- currState.getNeighbours) {
-        val score = scoring(n);
+      for (a <- actions(currState)) {
+        val n = transition(currState, a)
+        val score = scoring(n)
         if (score > bestNeighbourScore) {
+          bestAction = a
           bestNeighbourScore = score
           bestNeighbour = n
         }
+      }
+
+      if (log != null){
+        log!bestAction
+        log!bestNeighbour
       }
 
       if (bestNeighbourScore < currScore) { // reached local maximum and now going down
@@ -31,9 +46,7 @@ object EnhHillClimbing{
           return bestState
         downCount += 1
 
-        // went one step downhill, decay rate:
-        if (bestNeighbour.isInstanceOf[Decaying])
-          bestNeighbour.asInstanceOf[Decaying].decayRate
+        decay() // went one step downhill, decay rate:
       }
 
       currState = bestNeighbour             // move to best neighbour
