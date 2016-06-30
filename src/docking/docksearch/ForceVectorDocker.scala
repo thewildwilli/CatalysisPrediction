@@ -11,19 +11,18 @@ import model.{Atom, Molecule}
 
 // Created by Ernesto on 08/06/2016.
 // FIX THE DESIGN A BIT!!!
-class ForceVectorDocker(val surface: Double) extends Docker {
+class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Docker {
   val initialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   val initialDeltaSpace = 1.0
 
   override def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]) = {
 
-    val aRadius = molA.getRadius
-    val bRadius = molB.getRadius
+    val initialDistance = Math.max(molA.getRadius, molB.getRadius)
 
-    val right = DenseVector(aRadius + bRadius, 0.0, 0.0)
-    val left = DenseVector(-aRadius - bRadius, 0.0, 0.0)
-    val over = DenseVector(0.0, aRadius + bRadius, 0.0)
-    val under = DenseVector(0.0, -aRadius - bRadius, 0.0)
+    val right = DenseVector(initialDistance, 0.0, 0.0)
+    val left = DenseVector(-initialDistance, 0.0, 0.0)
+    val over = DenseVector(0.0, initialDistance, 0.0)
+    val under = DenseVector(0.0, -initialDistance, 0.0)
 
     List(over, under, left, right).map(pos => {
       log!Reset
@@ -50,11 +49,12 @@ class ForceVectorDocker(val surface: Double) extends Docker {
     var lastScore = Double.NegativeInfinity
     val state = new DockingState(molA, molB)
 
-    for (i <- 0 until 50) {
+    var decays = 0
+    while (decays <= maxDecays) {
       val forces = getForces(molA, molB);  // it is a list of pairs (atomB, force)
 
       val netForce = forces.map{ case (atomB, force) => force}.reduce((a, b) => a + b)
-      val translation = (netForce * deltaSpace) / norm(netForce) // TODO: DECAY!!
+      val translation = (netForce * deltaSpace) / norm(netForce)
 
       // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
       val torques = forces.map { case (atomB, force) =>
@@ -74,6 +74,7 @@ class ForceVectorDocker(val surface: Double) extends Docker {
       if (score < lastScore){
         deltaAngle = deltaAngle / 2.0
         deltaSpace = deltaSpace / 2.0
+        decays += 1
       }
       lastScore = score
     }
