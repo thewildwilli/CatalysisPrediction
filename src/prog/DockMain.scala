@@ -25,6 +25,7 @@ object DockMain {
       val s = chan? match {
         case a: Action => val cmd = JmolCmds.cmd(a); panel.execute(cmd); cmd
         case d: DockingState => s"score: ${scorer.score(d)}"
+        case "save" => panel.execute(JmolCmds.save); "save"
         case other => other.toString
       }
       if (DockArgs.consoleLog)

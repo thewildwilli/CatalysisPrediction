@@ -14,56 +14,65 @@ import model._
 class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Docker {
   val initialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   val initialDeltaSpace = 1.0
+  val minDeltaSpace = 1.0       // minimum to be used only when the molecules are too far apart
+
+  var iter =0
 
   override def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]) = {
+    // First, make sure both molecules are centered -> move B into the centre of A
+    val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
+    log!new Translate(centreVect)
+    molB.translate(centreVect)
+    log!"save"
+
     val radius = molA.getRadius + molB.getRadius
     val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(30))
 
     initialConfigs.map(pos => {
-      log!Reset
-      val b = molB.clone
-
-      b.translate(pos)
-      log!new Translate(pos)
-
-      forceVectorDock(molA, b, scorer, 0.000001, log)
+      dockFromPos(molA, molB, pos, scorer, 0.000001, log)
     }).maxBy(scorer.score)
   }
 
   /**  Docks b into a from b's initial position and orientation, using force vectors
     */
-  private def forceVectorDock(molA: Molecule, molB: Molecule,
-                              scorer: Scorer, threshold: Double,
-                              log: ![Action]) = {
+  private def dockFromPos(molA: Molecule, b: Molecule,
+                           pos: DenseVector[Double], scorer: Scorer,
+                           threshold: Double, log: ![Action]) = {
 
-    // get the force of each atom
-    // translate a rotate accordingly
-    // for a test, just translate the entire molecule
+    println(s"Docking from pos $iter")
+    iter+=1
+
+    // move the molecule to the starting position
+    val molB = b.clone
+    log!Reset
+    molB.translate(pos)
+    log!new Translate(pos)
+
+    val state = new DockingState(molA, molB)
 
     var maxAngle = initialDeltaAngle
     var maxTranslate = initialDeltaSpace
 
-    var currScore = Double.NegativeInfinity
+    var currScore = scorer.score(state)
     var lastScore = Double.NegativeInfinity
-    val state = new DockingState(molA, molB)
 
-    while (lastScore == Double.NegativeInfinity || Math.abs(currScore - lastScore) > threshold) {
-      lastScore = currScore
+    var scoreChange = 0.0                             // how much has the score changed in the last iteration
+    var lastScoreChange = Double.NegativeInfinity     // how much had the score changed in the previous interation
 
-      val forces = getForces(molA, molB);  // it is a list of pairs (atomB, force)
-      val netForce = forces.map{ case (atomB, force) => force}.reduce((a, b) => a + b)
-      val tranlateDistance = Math.min(norm(netForce), maxTranslate)
-      val translation = (netForce * tranlateDistance) / norm(netForce)
+    val radius = molA.getRadius + molB.getRadius
 
-      // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
-      val torques = forces.map { case (atomB, force) =>
-        val r = atomB.coords - molB.getGeometricCentre // radius vector from centre to atom
-        linalg.cross(r, force)
-      }
-      val netTorque = torques.reduce((a, b) => a + b)     // add all torques together
-      val netTorqueNorm = norm(netTorque)
-      val axis = netTorque / netTorqueNorm // normalize
-      val angle = Math.min(netTorqueNorm, maxAngle)
+    var minTranslationApplied = false
+
+
+    while (lastScore == Double.NegativeInfinity               // first and second iterations
+      || scoreChange > threshold                              // good rate of score increase
+      || scoreChange < 0                                      // decayed
+      || minTranslationApplied  ) {                           // min translation had to be applied because the molecules were too far apart
+
+      val forces = getForces(molA, molB)  // it is a list of pairs (atomB, force)
+      val (translation, m) = getTranslation(forces, maxTranslate)
+      minTranslationApplied = m
+      val (axis, angle) = getRotation(molB, maxAngle, forces)
 
       molB.translate(translation)
       log!new Translate(translation)
@@ -71,14 +80,49 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
       molB.rotate(molB.getGeometricCentre, axis, angle)
       log!new Rotate(molB.getGeometricCentre, axis, angle)
 
+      lastScore = currScore
       currScore = scorer.score(state)
-      if (currScore < lastScore){
+      lastScoreChange = scoreChange
+      scoreChange = currScore - lastScore
+
+      if (scoreChange < 0){     // decelerate
         maxAngle = maxAngle * 0.9
         maxTranslate = maxTranslate * 0.9
-        //decays += 1
       }
+
     }
     state
+  }
+
+  /** Returns a pair (vector, boolean). The vector has the translation,
+    * the boolean indicates if minimum translation had to be applied
+    */
+  private def getTranslation(atomForces: Seq[(Atom, DenseVector[Double])],
+                             maxTranslate: Double) = {
+    val forces = atomForces.map{ case (atomB, force) => force};
+    val netForce = forces.reduce((a, b) => a + b);
+    val totalForceNorm = forces.map(f => norm(f)).sum
+    val (translateDistance, minApplied) =
+      if (totalForceNorm < minDeltaSpace)
+        (minDeltaSpace, true)
+      else
+        (Math.min(norm(netForce), maxTranslate), false)
+    val translation = (netForce * translateDistance) / norm(netForce)
+    (translation, minApplied)
+  }
+
+  private def getRotation(molB: Molecule, maxAngle: Double,
+                          forces: Seq[(Atom, DenseVector[Double])]) = {
+    // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
+    val torques = forces.map { case (atomB, force) =>
+      val r = atomB.coords - molB.getGeometricCentre // radius vector from centre to atom
+      linalg.cross(r, force)
+    }
+    val netTorque = torques.reduce((a, b) => a + b)     // add all torques together
+    val netTorqueNorm = norm(netTorque)
+    val axis = netTorque / netTorqueNorm // normalize
+    val angle = Math.min(netTorqueNorm, maxAngle)
+    (axis, angle)
   }
 
   /** Returns a list of pairs (Atom, DenseVector) containing the net force for
