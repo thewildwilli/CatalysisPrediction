@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="jmol-14.12.14">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/jmol-14.12.14.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../Tools/jmol-14.2.14_2015.05.25/src" />
+    </SOURCES>
+  </library>
+</component>

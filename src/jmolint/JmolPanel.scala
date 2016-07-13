@@ -4,18 +4,17 @@ import javax.swing._
 import java.awt._
 
 import org.jmol.adapter.smarter.SmarterJmolAdapter
-import org.jmol.api.{JmolAdapter, JmolSimpleViewer}
+import org.jmol.api._
+import org.jmol.viewer.Viewer
 
 // Created by Ernesto on 30/06/2016.
 class JmolPanel extends JPanel {
   private val serialVersionUID: Long = -3661941083797644242L
 
-  private val adapter = new SmarterJmolAdapter
-  private val viewer = JmolSimpleViewer.allocateSimpleViewer(this, adapter)
+  val adapter = new SmarterJmolAdapter
+  val viewer = JmolViewer.allocateViewer(this, adapter).asInstanceOf[Viewer]
   private val currentSize: Dimension = new Dimension
   private val rectClip: Rectangle = new Rectangle
-
-  def getViewer = viewer
 
   override def paint(g: Graphics) {
     getSize(currentSize)
@@ -24,25 +23,27 @@ class JmolPanel extends JPanel {
   }
 
   // CONVENIENCE METHODS:
-  def execute(cmds: String*) {
+  def exec(cmds: String*) {
     for (cmd <- cmds) viewer.evalString(cmd)
   }
 
-  def openFiles(paths: Array[String]): Unit ={
-    viewer.openFiles(paths)
-    execute(JmolCmds.showAllModels)
+  def execSync(cmds: String*) {
+    for (cmd <- cmds) viewer.evalStringQuietSync(cmd, false, true)
+    while (viewer.getScriptQueueInfo()) Thread.sleep(10)
   }
 
-  def openFiles(paths: String*) {
-    openFiles(paths.toArray)
+  def openFiles(paths: Seq[String]) {
+    execSync(JmolCmds.loadFiles(paths))
+    exec(JmolCmds.showAllModels)
   }
+
 
   def openAndColor(pathsAndColors: (String, String)*) {
     val paths = pathsAndColors.map(pair => pair._1)
-    openFiles(paths.toArray)
+    openFiles(paths)
     val colours = pathsAndColors.map(pair => pair._2)
     for (i <- colours.indices) {
-      execute(JmolCmds.modelColor(s"${i+1}.1", colours(i)))
+      exec(JmolCmds.modelColor(s"${i+1}.1", colours(i)))
 
     }
 

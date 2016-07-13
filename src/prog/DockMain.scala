@@ -6,7 +6,7 @@ import docking.docksearch._
 import io.{PdbReader, XyzWriter}
 import io.threadcso._
 import jmolint.JmolCmds._
-import jmolint.{JmolCmds, JmolFrame, JmolPanel}
+import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
 import model.Molecule
 import opt.Action
 
@@ -23,9 +23,9 @@ object DockMain {
   def showActions(chan: ?[Any], panel: JmolPanel, scorer: Scorer) = proc {
     repeat {
       val s = chan? match {
-        case a: Action => val cmd = JmolCmds.cmd(a); panel.execute(cmd); cmd
+        case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
         case d: DockingState => s"score: ${scorer.score(d)}"
-        case "save" => panel.execute(JmolCmds.save); "save"
+        case "save" => panel.exec(JmolCmds.save); "save"
         case other => other.toString
       }
       if (DockArgs.consoleLog)
@@ -36,19 +36,22 @@ object DockMain {
 
   def main(args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()
-
     parseArgs(args)
-    val molA: Molecule = new PdbReader(DockArgs.pathA).read
-    val molB: Molecule = new PdbReader(DockArgs.pathB).read
-    val scorer: Scorer = new SurfaceDistanceScorer(1.4)
-    val docker = getDocker
 
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathB, "red"))
-    jmolPanel.execute(
+    jmolPanel.exec(
       setLog(0),
       zoom(50),
       save
     )
+
+    val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
+    //val molA: Molecule = new PdbReader(DockArgs.pathA).read
+    val molB: Molecule = new PdbReader(DockArgs.pathB).read
+    val scorer: Scorer = new SurfaceDistanceScorer(1.4)
+    val docker = getDocker
+
+
 
     val chan = OneOne[Any]
     var docked = null.asInstanceOf[DockingState]

@@ -14,7 +14,7 @@ object JmolCmds {
         val end = r.c + r.axis
         s"rotate selected {${r.c(0)} ${r.c(1)} ${r.c(2)}} {${end(0)} ${end(1)} ${end(2)}} ${Math.toDegrees(r.angRad)} "
 
-      case Reset => reset
+      case Reset => reset + ";"+ showAllModels
     }
   }
 
@@ -26,6 +26,7 @@ object JmolCmds {
   def zoom(percent: Int) = s"zoom $percent"
   def save = "save state"
   def reset = "restore state"
+  def loadFiles(paths: Seq[String]) = "load files " + paths.map(p => "\"" + p.replace("\\", "/") + "\"").mkString(" ")
 
 
 }
