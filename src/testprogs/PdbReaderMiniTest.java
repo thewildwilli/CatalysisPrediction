@@ -1,9 +1,7 @@
 package testprogs;
 
 import model.*;
-import io.ChemicalFormatException;
-import io.MoleculeReader;
-import io.PdbReader;
+import io.*;
 
 import java.io.IOException;
 
@@ -14,5 +12,6 @@ public class PdbReaderMiniTest {
         Molecule m = reader.read();
         for (Atom a: m.JAtoms() )
             System.out.println(a.toString());
+        new Mol2Writer(args[1]).write(m);
     }
 }

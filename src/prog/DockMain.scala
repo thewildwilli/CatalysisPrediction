@@ -3,7 +3,7 @@ package prog
 import docking.DockingState
 import docking.dockscore._
 import docking.docksearch._
-import io.{PdbReader, XyzWriter}
+import io.Mol2Writer
 import io.threadcso._
 import jmolint.JmolCmds._
 import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
@@ -46,19 +46,16 @@ object DockMain {
     )
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
-    //val molA: Molecule = new PdbReader(DockArgs.pathA).read
-    val molB: Molecule = new PdbReader(DockArgs.pathB).read
+    val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val scorer: Scorer = new SurfaceDistanceScorer(1.4)
     val docker = getDocker
-
-
 
     val chan = OneOne[Any]
     var docked = null.asInstanceOf[DockingState]
     (proc { docked = docker.dock(molA, molB, scorer, chan); chan.close } ||
       showActions(chan, jmolPanel, scorer))()
 
-    new XyzWriter(DockArgs.pathOut).write(docked.b)      // write docked b to file
+    new Mol2Writer(DockArgs.pathOut).write(docked.b)      // write docked b to file
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathOut, "red"))  // show original a and modified b
 
     println(s"Finished with score: ${scorer.score(docked)}, total time: ${System.currentTimeMillis()-startTime}ms")

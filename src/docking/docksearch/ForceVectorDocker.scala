@@ -26,10 +26,10 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     log!"save"
 
     val radius = molA.getRadius + molB.getRadius
-    val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(30))
+    val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(90))
 
     initialConfigs.map(pos => {
-      dockFromPos(molA, molB, pos, scorer, 0.000001, log)
+      dockFromPos(molA, molB, pos, scorer, 1.0e-5, log)
     }).maxBy(scorer.score)
   }
 
@@ -137,12 +137,37 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     molA.Atoms.map(atomA => atomToAtomForce(atomA, atomB)).reduce((a, b) => a+b)
   }
 
-  /** calculates the force that atomA excerts on atomB */
+  /** calculates the force that atomA excerts on atomB
+    * This force has 2 components:
+    *   - Atomic attraction: atoms naturally attract each other so as to dock.
+    *     They attract up to the optimal distance, and if close, they reject.
+    *     This is a sort of simulated gravity.
+    *   - Electric force: different charges attract, equal charges reject.
+    *     Equal forces reject if the distance is closer than the optimal distance.
+    *     Different forces attract if the distance is farther than the optimal distance.
+    * */
   private def atomToAtomForce(atomA: Atom, atomB: Atom): DenseVector[Double] = {
-    val dir = atomA.coords - atomB.coords;      // direction from b to a
-    val normdir = dir / norm(dir);              // normalized to length 1
-    normdir * forceFactor(atomA, atomB)
+    // Atomic force:
+    val dif = atomA.coords - atomB.coords;                    // direction from b to a
+    val dir = dif / norm(dif);                                // normalized to length 1
+    val atomicForceNorm = forceFactor(atomA, atomB)
+    val atomicForce = dir * atomicForceNorm
+
+    // electric force:
+    val chargeProduct = atomA.partialCharge*atomB.partialCharge
+    val electricForceNorm =
+      if (chargeProduct < 0)                                  // different charges, attract
+        Math.min(atomicForceNorm, 0.0)                        // the atomic force, if distance > optimal
+      else if (chargeProduct > 0)                             // equal charges, reject
+        Math.max(atomicForceNorm, 0.0)                        // the atomic force, if distance < optimal
+      else                                                    // no charge
+        0.0
+    val electricForce = dir * electricForceNorm
+
+    //println(s"atomicForce: $atomicForceNorm, electricForce: $electricForceNorm")
+    atomicForce + electricForce
   }
+
 
   /** Calculates a factor f such that the force that a exerts on b
     * is f * a normalized vector pointing from b to a.
@@ -154,7 +179,8 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     val optimal = atomA.radius + atomB.radius + 2 * surface // optimal distance
     val actual = atomA.distTo(atomB)
     val dNormalized = actual/optimal
-    expsquare(dNormalized)
+    //expsquare(dNormalized)
+    Math.log(dNormalized)
   }
 
   private def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
