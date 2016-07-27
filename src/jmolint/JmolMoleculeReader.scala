@@ -12,8 +12,15 @@ object JmolMoleculeReader {
 
     for (jmolAtom <- ms.at)
       if (jmolAtom.mi == modelIndex)
-        atoms.append(new Atom(jmolAtom.getElementSymbol,
-          jmolAtom.x, jmolAtom.y, jmolAtom.z, jmolAtom.getPartialCharge))
+        atoms.append(new Atom(
+          jmolAtom.getElementSymbol,
+          jmolAtom.x, jmolAtom.y, jmolAtom.z,
+          jmolAtom.getPartialCharge,
+
+          jmolAtom.getAtomName,
+          jmolAtom.group.getSeqcodeString,
+          jmolAtom.group.getGroup3
+        ))
 
     new Molecule(atoms)
   }

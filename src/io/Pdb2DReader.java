@@ -7,9 +7,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-/**
- * Created by Ernesto on 23/05/2016.
- */
 public class Pdb2DReader implements MoleculeReader {
     private final String path;
     public Pdb2DReader(String path){
@@ -34,7 +31,7 @@ public class Pdb2DReader implements MoleculeReader {
                         double x = Double.parseDouble(line.substring(30, 38).trim());
                         double y = Double.parseDouble(line.substring(38, 46).trim());
                         double z = 0.0;
-                        result.JAtoms().add(new Atom("C", x, y, z, 0.0));
+                        result.JAtoms().add(new Atom("C", x, y, z, 0.0, "", "", ""));
                     }
                 }
             }

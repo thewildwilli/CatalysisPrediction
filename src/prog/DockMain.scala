@@ -17,7 +17,7 @@ object DockMain {
     "-out (B's output path, xyz format) " +
     "-docker (atompair|forcevector) [--consolelog] " +
     " [--ignorehydrogen] " +
-    " [-balance gravity,electric,bondenergy] "
+    " [-balance atomic,electric,bond] "
 
   val frame = new JmolFrame(500, 500, true)
   val jmolPanel = frame.getPanel
@@ -67,38 +67,22 @@ object DockMain {
     }
   }
 
-  def parseArgs(args: Array[String]) = {
-    var i = 0
-
-    try {
-      while (i < args.length) {
-        args(i) match {
-          case "-a" => DockArgs.pathA = args(i + 1);i += 2
-          case "-b" => DockArgs.pathB = args(i + 1);i += 2
-          case "-out" => DockArgs.pathOut = args(i + 1); i += 2
-          case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
-          case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
-          case "--consolelog" => DockArgs.consoleLog = true; i += 1
-          case "--ignorehydrogen" => DockArgs.ignoreHydrogen = true; i += 1
-          case _ => sys.error(usage)
-        }
-      }
-    }
-    catch { case _:Exception => sys.error(usage) }
-
-    if (!DockArgs.valid)
-      sys.error(usage)
-
-    print(DockArgs)
-  }
-
   /**
     * Gets an instance of a docker given the name. In the future, this could be
     * enhanced to use reflection.
     */
   def getDocker = DockArgs.dockerName match {
       case "atompair" => AtomPairDocker
-      case "forcevector" => new ForceVectorDocker(1.4, 10, DockArgs.ignoreHydrogen)
+
+      case "forcevector" => new ForceVectorDocker(
+        surface = 1.4,
+        maxDecays = 10,
+        ignoreHydrogen = DockArgs.ignoreHydrogen,
+        atomicForceWeight = DockArgs.atomicForceWeight,
+        electricForceWeight = DockArgs.electricForceWeight,
+        bondForceWeight = DockArgs.bondForceWeight
+      )
+
       case _ => sys.error(usage)
     }
 
@@ -115,6 +99,50 @@ object DockMain {
     }
   }
 
+  def parseArgs(args: Array[String]) = {
+    var i = 0
+
+    try {
+      while (i < args.length) {
+        args(i) match {
+          case "-a" => DockArgs.pathA = args(i + 1);i += 2
+          case "-b" => DockArgs.pathB = args(i + 1);i += 2
+          case "-out" => DockArgs.pathOut = args(i + 1); i += 2
+          case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
+          case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
+          case "--consolelog" => DockArgs.consoleLog = true; i += 1
+          case "--ignorehydrogen" => DockArgs.ignoreHydrogen = true; i += 1
+          case "-balance" =>
+            val balanceStrs = args(i+1).split(',')
+            if (balanceStrs.length != 3)
+              sys.error(usage)
+
+            val atomicForceWeight = balanceStrs(0).toDouble
+            val electricForceWeight = balanceStrs(1).toDouble
+            val bondForceWeight = balanceStrs(2).toDouble
+            val sum = atomicForceWeight + electricForceWeight + bondForceWeight
+
+            if (atomicForceWeight < 0 || electricForceWeight < 0 || bondForceWeight < 0 || sum==0.0)
+              sys.error(usage)
+
+            DockArgs.atomicForceWeight = atomicForceWeight / sum
+            DockArgs.electricForceWeight = electricForceWeight / sum
+            DockArgs.bondForceWeight = bondForceWeight / sum
+
+            i += 2
+
+          case _ => sys.error(usage)
+        }
+      }
+    }
+    catch { case _:Exception => sys.error(usage) }
+
+    if (!DockArgs.valid)
+      sys.error(usage)
+
+    print(DockArgs)
+  }
+
   object DockArgs {
     var pathA = ""
     var pathB = ""
@@ -122,8 +150,16 @@ object DockMain {
     var dockerName = ""
     var scorerName = ""
     var consoleLog = false
+
+    // Force vector docker specifics:
     var ignoreHydrogen = false
-    def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != ""
+      // Force vector force balance: either all 3 set, or all 3 with default values
+    var atomicForceWeight = 1.0
+    var electricForceWeight = 1.0
+    var bondForceWeight = 1.0
+
+    def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
+      Math.abs(atomicForceWeight + electricForceWeight + bondForceWeight - 1.0) < 1.0e-5
   }
 
 }

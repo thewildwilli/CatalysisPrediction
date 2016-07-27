@@ -31,4 +31,19 @@ object BondEnergy {
         }
     }
   }
+
+  private var _average =  -1.0
+  def average = {
+    if (_average < 0) {
+      var total = 0.0
+      var count = 0
+      for (m1 <- energies.values)
+        for (energy <- m1.values) {
+          total += energy
+          count += 1
+        }
+      _average = total / count.toDouble
+    }
+    _average
+  }
 }

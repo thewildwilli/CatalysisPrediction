@@ -4,7 +4,10 @@ import breeze.linalg.{DenseMatrix, DenseVector, norm}
 
 /** Distances in Angstrongs */
 class Atom (elem: String, initX: Double, initY: Double, initZ: Double
-           , val partialCharge: Double = 0.0) {
+           , val partialCharge: Double = 0.0,
+            val atomName: String = "",
+            val substructureId: String = "",
+            val substructureName: String = "") {
 
   var _element = "C"
   private var _radius = 1.4
@@ -34,6 +37,9 @@ class Atom (elem: String, initX: Double, initY: Double, initZ: Double
     coords = updated(0 to 2)
   }
 
-  override def clone = new Atom(elem, this.x, this.y, this.z, this.partialCharge)
+  override def clone = new Atom(elem, this.x, this.y, this.z,
+                                this.partialCharge, this.atomName,
+                                this.substructureId, this.substructureName)
+
   override def toString: String = s"Atom at $x, $y, $z with charge $partialCharge"
 }

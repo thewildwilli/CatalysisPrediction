@@ -4,9 +4,6 @@ import model.*;
 
 import java.io.*;
 
-/**
- * Created by Ernesto on 23/05/2016.
- */
 public class PdbReader implements MoleculeReader {
     private final String path;
     public PdbReader(String path){
@@ -31,7 +28,7 @@ public class PdbReader implements MoleculeReader {
                         double x = Double.parseDouble(line.substring(30, 38).trim());
                         double y = Double.parseDouble(line.substring(38, 46).trim());
                         double z = Double.parseDouble(line.substring(46, 54).trim());
-                        result.JAtoms().add(new Atom("C", x, y, z, 0.0));
+                        result.JAtoms().add(new Atom("C", x, y, z, 0.0, "", "", ""));
                     }
                 }
             }

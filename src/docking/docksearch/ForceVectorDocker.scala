@@ -9,10 +9,15 @@ import opt._
 import io.threadcso._
 import model._
 
-// Created by Ernesto on 08/06/2016.
+
 // FIX THE DESIGN A BIT!!!
 class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
-                        val ignoreHydrogen: Boolean = false) extends Docker {
+                        val ignoreHydrogen: Boolean = false,
+                        val atomicForceWeight: Double = .34,
+                        val electricForceWeight: Double = .33,
+                        val bondForceWeight: Double = .33) extends Docker {
+
+
   val initialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   val initialDeltaSpace = 1.0
   val minDeltaSpace = 1.0       // minimum to be used only when the molecules are too far apart
@@ -169,9 +174,14 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
         0.0
     val electricForce = dir * electricForceNorm
 
-    val bondEnergy = BondEnergy(atomA.element, atomB.element)
+    // bond force:
+    val bondEnergy = BondEnergy(atomA.element, atomB.element) / BondEnergy.average
+    val bondForce = atomicForce * bondEnergy
 
-    (atomicForce + electricForce) * (bondEnergy / 1000.0)
+    // weighted result:
+    atomicForce * atomicForceWeight +
+      electricForce * electricForceWeight +
+      bondForce * bondForceWeight
   }
 
 

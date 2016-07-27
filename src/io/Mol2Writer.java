@@ -28,11 +28,15 @@ public class Mol2Writer implements MoleculeWriter {
             fw.write("@<TRIPOS>ATOM\n");
             for (Atom a: m.JAtoms())
                 fw.write(String.format(
-                        " %d %s %.8f %.8f %.8f %.4s 1 A %.8f%n",
+                        " %5d %5s %18.8f %18.8f %18.8f %2s %4s %3s %18.8f%n",
                         serial++,
-                        a.element(),
+                        a.atomName(),
                         a.x(), a.y(), a.z(),
                         a.element(),
+
+                        a.substructureId(),
+                        a.substructureName(),
+
                         a.partialCharge()
                 ));
         }
