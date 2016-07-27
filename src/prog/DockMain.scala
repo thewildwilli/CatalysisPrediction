@@ -98,7 +98,7 @@ object DockMain {
     */
   def getDocker = DockArgs.dockerName match {
       case "atompair" => AtomPairDocker
-      case "forcevector" => new ForceVectorDocker(1.4)
+      case "forcevector" => new ForceVectorDocker(1.4, 10, DockArgs.ignoreHydrogen)
       case _ => sys.error(usage)
     }
 
