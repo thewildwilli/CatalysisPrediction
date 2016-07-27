@@ -31,7 +31,7 @@ object FourInitialsDocker2D extends Docker {
 
   private def performDock(molA: Molecule, molB: Molecule, startPos: DenseVector[Double],
                           scorer: Scorer, log: ![Any]): DockingState = {
-    if (log != null) log!Reset // let know that we are starting again from molA and molB
+    if (log != null) log!"reset" // let know that we are starting again from molA and molB
 
     // move molB to its starting position
     val t = new Translate(startPos)

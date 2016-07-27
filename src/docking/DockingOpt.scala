@@ -14,7 +14,6 @@ object DockingState {
     action match {
       case t: Translate => bcopy.translate(t.v)
       case r: Rotate => bcopy.rotate(r.c, r.axis, r.angRad)
-      case Reset =>
     }
     new DockingState(state.a, bcopy)
   }
@@ -40,5 +39,3 @@ class Rotate(val c: DenseVector[Double], val axis: DenseVector[Double],
   if (axis.length != 3)
     throw new IllegalArgumentException("Axis must be a 3-dimensional vector")
 }
-
-object Reset extends Action

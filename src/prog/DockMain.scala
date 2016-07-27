@@ -20,19 +20,7 @@ object DockMain {
   val frame = new JmolFrame(500, 500, true)
   val jmolPanel = frame.getPanel
 
-  def showActions(chan: ?[Any], panel: JmolPanel, scorer: Scorer) = proc {
-    repeat {
-      val s = chan? match {
-        case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
-        case d: DockingState => s"score: ${scorer.score(d)}"
-        case "save" => panel.exec(JmolCmds.save); "save"
-        case other => other.toString
-      }
-      if (DockArgs.consoleLog)
-        println(s)
-      ()
-    }
-  }
+  val viewInitCmds = getViewInitCmds
 
   def main(args: Array[String]): Unit = {
     val startTime = System.currentTimeMillis()
@@ -57,8 +45,24 @@ object DockMain {
 
     new Mol2Writer(DockArgs.pathOut).write(docked.b)      // write docked b to file
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathOut, "red"))  // show original a and modified b
+    jmolPanel.execSeq(viewInitCmds)
 
     println(s"Finished with score: ${scorer.score(docked)}, total time: ${System.currentTimeMillis()-startTime}ms")
+  }
+
+  def showActions(chan: ?[Any], panel: JmolPanel, scorer: Scorer) = proc {
+    repeat {
+      val s = chan? match {
+        case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
+        case d: DockingState => s"score: ${scorer.score(d)}"
+        case "save" => panel.exec(JmolCmds.save); "save"
+        case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(viewInitCmds); "reset"
+        case other => other.toString
+      }
+      if (DockArgs.consoleLog)
+        println(s)
+      ()
+    }
   }
 
   def parseArgs(args: Array[String]) = {
@@ -92,6 +96,19 @@ object DockMain {
       case "forcevector" => new ForceVectorDocker(1.4)
       case _ => sys.error(usage)
     }
+
+  /**
+    * Gets a list of commands from file viewinit.txt.
+    * These commands are then run each time the JMOL view is reset.
+    * If the file does not exist or cannot be read, returns an empty list.
+    */
+  def getViewInitCmds = {
+    try {
+      scala.io.Source.fromFile("viewinit.txt").getLines.toSeq
+    } catch {
+      case e: Exception => List[String]()
+    }
+  }
 
   object DockArgs {
     var pathA = ""

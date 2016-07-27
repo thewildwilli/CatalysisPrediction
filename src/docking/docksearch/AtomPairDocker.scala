@@ -3,7 +3,7 @@ package docking.docksearch
 import breeze.linalg.DenseVector
 import io.threadcso._
 
-import docking.{Docker, DockingState, Rotate, Translate, Reset}
+import docking.{Docker, DockingState, Rotate, Translate}
 import docking.dockscore.Scorer
 import model.Molecule
 import opt.HillClimbing
@@ -33,7 +33,7 @@ object AtomPairDocker extends Docker {
 
   private def dockPair(molA: Molecule, x: Int, molB: Molecule, y: Int,
                        scorer: Scorer, log: ![Any]) = {
-    if (log!=null)log!Reset // let know that we are starting again from molA and molB
+    if (log!=null)log!"reset" // let know that we are starting again from molA and molB
 
     //    translate molB so that the pair (atomA, atomB) overlaps:
     val t = new Translate(molA(x).coords - molB(y).coords)
@@ -56,7 +56,7 @@ object AtomPairDocker extends Docker {
 
   private def dockPair2D(molA: Molecule, x: Int, molB: Molecule, y: Int,
                          scorer: Scorer, log: ![Any]) = {
-    if (log!=null)log!Reset // let know that we are starting again from molA and molB
+    if (log!=null)log!"reset" // let know that we are starting again from molA and molB
 
     //    translate molB so that the pair (atomA, atomB) overlaps:
     val t = new Translate(molA(x).coords - molB(y).coords)

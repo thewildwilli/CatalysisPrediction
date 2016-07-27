@@ -37,14 +37,14 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     */
   private def dockFromPos(molA: Molecule, b: Molecule,
                            pos: DenseVector[Double], scorer: Scorer,
-                           threshold: Double, log: ![Action]) = {
+                           threshold: Double, log: ![Any]) = {
 
     println(s"Docking from pos $iter")
     iter+=1
 
     // move the molecule to the starting position
     val molB = b.clone
-    log!Reset
+    log!"reset"
     molB.translate(pos)
     log!new Translate(pos)
 
@@ -99,8 +99,8 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     */
   private def getTranslation(atomForces: Seq[(Atom, DenseVector[Double])],
                              maxTranslate: Double) = {
-    val forces = atomForces.map{ case (atomB, force) => force};
-    val netForce = forces.reduce((a, b) => a + b);
+    val forces = atomForces.map{ case (atomB, force) => force}
+    val netForce = forces.reduce((a, b) => a + b)
     val totalForceNorm = forces.map(f => norm(f)).sum
     val (translateDistance, minApplied) =
       if (totalForceNorm < minDeltaSpace)
@@ -164,8 +164,9 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
         0.0
     val electricForce = dir * electricForceNorm
 
-    //println(s"atomicForce: $atomicForceNorm, electricForce: $electricForceNorm")
-    atomicForce + electricForce
+    val bondEnergy = BondEnergy(atomA.element, atomB.element)
+
+    (atomicForce + electricForce) * (bondEnergy / 1000.0)
   }
 
 
@@ -180,8 +181,11 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
     val actual = atomA.distTo(atomB)
     val dNormalized = actual/optimal
     //expsquare(dNormalized)
-    Math.log(dNormalized)
+    //Math.log(dNormalized)
+    explog(dNormalized)
   }
 
   private def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
+
+  private def explog(x: Double) = Math.exp(-Math.pow(x,2))*Math.log(x)
 }

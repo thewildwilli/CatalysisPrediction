@@ -27,6 +27,10 @@ class JmolPanel extends JPanel {
     for (cmd <- cmds) viewer.evalString(cmd)
   }
 
+  def execSeq(cmds: Seq[String]): Unit = {
+    for (cmd <- cmds) viewer.evalString(cmd)
+  }
+
   def execSync(cmds: String*) {
     for (cmd <- cmds) viewer.evalStringQuietSync(cmd, false, true)
     while (viewer.getScriptQueueInfo()) Thread.sleep(10)

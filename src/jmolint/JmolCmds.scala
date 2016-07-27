@@ -13,8 +13,6 @@ object JmolCmds {
         // Example: rotate selected {0 100 0} {1 100 0} 10: rotate about point {0 100 0} with axis {1 0 0} 10 degrees
         val end = r.c + r.axis
         s"rotate selected {${r.c(0)} ${r.c(1)} ${r.c(2)}} {${end(0)} ${end(1)} ${end(2)}} ${Math.toDegrees(r.angRad)} "
-
-      case Reset => reset + ";"+ showAllModels
     }
   }
 
