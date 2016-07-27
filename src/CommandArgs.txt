@@ -4,7 +4,7 @@
 -a 3HTB_protein.pdb -b 3HTB_ligand.pdb -out 3htb_docked.xyz -docker forcevector
 
 -a RNA_GGCGCC_Kiedrowski86_RNAComposer.pdb -b RNA_CCGCGG_Kiedrowski86_RNAComposer.pdb -out RNA_kiedrowski86_RNAComposer_docked.mol2 -docker forcevector
--a RNA_GGCGCC_Kiedrowski86_RNAComposerWC.mol2 -b RNA_CCGCGG_Kiedrowski86_RNAComposerWC.mol2 -out RNA_kiedrowski86_RNAComposerWC_docked.mol2 -docker forcevector
+-a RNA_GGCGCC_Kiedrowski86_RNAComposerWC.mol2 -b RNA_CCGCGG_Kiedrowski86_RNAComposerWC.mol2 -out RNA_kiedrowski86_RNAComposerWC_docked.mol2 -docker forcevector --ignorehydrogen
 
 -a RNA_GGCGCC_Kiedrowski86_SimRNA.pdb -b RNA_CCGCGG_Kiedrowski86_SimRNA.pdb -out RNA_kiedrowski86_SimRNA_docked.xyz -docker forcevector
 -a RNA_GGCGCC_Kiedrowski86_SimRNA_WC.mol2 -b RNA_CCGCGG_Kiedrowski86_SimRNA_WC.mol2 -out RNA_kiedrowski86_SimRNA_docked_WC.xyz -docker forcevector

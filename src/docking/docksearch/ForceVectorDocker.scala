@@ -11,7 +11,8 @@ import model._
 
 // Created by Ernesto on 08/06/2016.
 // FIX THE DESIGN A BIT!!!
-class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Docker {
+class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
+                        val ignoreHydrogen: Boolean = false) extends Docker {
   val initialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   val initialDeltaSpace = 1.0
   val minDeltaSpace = 1.0       // minimum to be used only when the molecules are too far apart
@@ -128,13 +129,17 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10) extends Do
   /** Returns a list of pairs (Atom, DenseVector) containing the net force for
     * each atom in molB.     */
   private def getForces(molA: Molecule, molB: Molecule) = {
-    molB.Atoms.map(atomB => (atomB, molToAtomForce(molA, atomB) ))
+    molB.Atoms
+      .filter(atomB => !(ignoreHydrogen && atomB.isElement("H")))
+      .map(atomB => (atomB, molToAtomForce(molA, atomB) ))
   }
 
   /** Calculates the total force that molA exerts on atomB: the sum
     * of the forces each atom in a exerts on atomB   */
   private def molToAtomForce(molA: Molecule, atomB: Atom): DenseVector[Double] = {
-    molA.Atoms.map(atomA => atomToAtomForce(atomA, atomB)).reduce((a, b) => a+b)
+    molA.Atoms
+      .filter(atomA => !(ignoreHydrogen && atomA.isElement("H")))
+      .map(atomA => atomToAtomForce(atomA, atomB)).reduce((a, b) => a+b)
   }
 
   /** calculates the force that atomA excerts on atomB

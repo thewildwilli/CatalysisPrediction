@@ -15,7 +15,9 @@ object DockMain {
   val usage = "USAGE: scala DockMain -a (path to A, pdb format) " +
     "-b (path to B, pdb format) " +
     "-out (B's output path, xyz format) " +
-    "-docker (atompair|forcevector) [--consolelog]"
+    "-docker (atompair|forcevector) [--consolelog] " +
+    " [--ignorehydrogen] " +
+    " [-balance gravity,electric,bondenergy] "
 
   val frame = new JmolFrame(500, 500, true)
   val jmolPanel = frame.getPanel
@@ -77,6 +79,7 @@ object DockMain {
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
+          case "--ignorehydrogen" => DockArgs.ignoreHydrogen = true; i += 1
           case _ => sys.error(usage)
         }
       }
@@ -85,6 +88,8 @@ object DockMain {
 
     if (!DockArgs.valid)
       sys.error(usage)
+
+    print(DockArgs)
   }
 
   /**
@@ -117,6 +122,7 @@ object DockMain {
     var dockerName = ""
     var scorerName = ""
     var consoleLog = false
+    var ignoreHydrogen = false
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != ""
   }
 

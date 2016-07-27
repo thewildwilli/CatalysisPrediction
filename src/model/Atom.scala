@@ -14,7 +14,8 @@ class Atom (elem: String, initX: Double, initY: Double, initZ: Double
   setElement(elem)
 
   def element = _element
-  def setElement(e: String) = {_element = e; _radius = VanDerWaalsRadii(e)}
+  def setElement(e: String) = {_element = e; _radius = VanDerWaalsRadii(_element)}
+  def isElement(e: String) = _element.toUpperCase == e.toUpperCase
   def radius = _radius
 
   def x = coords(0)
