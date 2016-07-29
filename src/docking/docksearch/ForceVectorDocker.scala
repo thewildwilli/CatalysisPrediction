@@ -22,6 +22,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
   val initialDeltaSpace = 1.0
   val minDeltaSpace = 1.0       // minimum to be used only when the molecules are too far apart
 
+  var avgBondEnergy = 0.0
   var iter =0
 
   override def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]) = {
@@ -34,8 +35,12 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     val radius = molA.getRadius + molB.getRadius
     val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(90))
 
+    val avgBondEnergy =
+      (for (a <- molA.Atoms; b <- molB.Atoms) yield BondEnergy(a.element, b.element)).sum /
+        (molA.Atoms.size + molB.Atoms.size)
+
     initialConfigs.map(pos => {
-      dockFromPos(molA, molB, pos, scorer, 1.0e-5, log)
+      dockFromPos(molA, molB, pos, scorer, 1.0e-5, avgBondEnergy, log)
     }).maxBy(scorer.score)
   }
 
@@ -43,7 +48,8 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     */
   private def dockFromPos(molA: Molecule, b: Molecule,
                            pos: DenseVector[Double], scorer: Scorer,
-                           threshold: Double, log: ![Any]) = {
+                           threshold: Double,
+                           avgBondEnergy: Double, log: ![Any]) = {
 
     println(s"Docking from pos $iter")
     iter+=1
@@ -75,7 +81,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
       || scoreChange < 0                                      // decayed
       || minTranslationApplied  ) {                           // min translation had to be applied because the molecules were too far apart
 
-      val forces = getForces(molA, molB)  // it is a list of pairs (atomB, force)
+      val forces = getForces(molA, molB, avgBondEnergy)  // it is a list of pairs (atomB, force)
       val (translation, m) = getTranslation(forces, maxTranslate)
       minTranslationApplied = m
       val (axis, angle) = getRotation(molB, maxAngle, forces)
@@ -133,7 +139,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
 
   /** Returns a list of pairs (Atom, DenseVector) containing the net force for
     * each atom in molB.     */
-  private def getForces(molA: Molecule, molB: Molecule) = {
+  private def getForces(molA: Molecule, molB: Molecule, avgBondEnergy: Double) = {
     molB.Atoms
       .filter(atomB => !(ignoreHydrogen && atomB.isElement("H")))
       .map(atomB => (atomB, molToAtomForce(molA, atomB) ))
@@ -144,7 +150,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
   private def molToAtomForce(molA: Molecule, atomB: Atom): DenseVector[Double] = {
     molA.Atoms
       .filter(atomA => !(ignoreHydrogen && atomA.isElement("H")))
-      .map(atomA => atomToAtomForce(atomA, atomB)).reduce((a, b) => a+b)
+      .map(atomA => atomToAtomForce(atomA, atomB, avgBondEnergy)).reduce((a, b) => a+b)
   }
 
   /** calculates the force that atomA excerts on atomB
@@ -156,27 +162,19 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     *     Equal forces reject if the distance is closer than the optimal distance.
     *     Different forces attract if the distance is farther than the optimal distance.
     * */
-  private def atomToAtomForce(atomA: Atom, atomB: Atom): DenseVector[Double] = {
-    // Atomic force:
+  private def atomToAtomForce(atomA: Atom, atomB: Atom, avgBondEnergy: Double): DenseVector[Double] = {
     val dif = atomA.coords - atomB.coords;                    // direction from b to a
     val dir = dif / norm(dif);                                // normalized to length 1
-    val atomicForceNorm = forceFactor(atomA, atomB)
+
+    // Atomic force:
+    val atomicForceNorm = getAtomicForceNorm(atomA, atomB)
     val atomicForce = dir * atomicForceNorm
 
     // electric force:
-    val chargeProduct = atomA.partialCharge*atomB.partialCharge
-    val electricForceNorm =
-      if (chargeProduct < 0)                                  // different charges, attract
-        Math.min(atomicForceNorm, 0.0)                        // the atomic force, if distance > optimal
-      else if (chargeProduct > 0)                             // equal charges, reject
-        Math.max(atomicForceNorm, 0.0)                        // the atomic force, if distance < optimal
-      else                                                    // no charge
-        0.0
-    val electricForce = dir * electricForceNorm
+    val electricForce = dir * getElectricForceNorm(atomA, atomB)
 
     // bond force:
-    val bondEnergy = BondEnergy(atomA.element, atomB.element) / BondEnergy.average
-    val bondForce = atomicForce * bondEnergy
+    val bondForce = dir * getBondForceNorm(atomA, atomB, avgBondEnergy)
 
     // weighted result:
     atomicForce * atomicForceWeight +
@@ -185,10 +183,10 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
   }
 
 
-  /** Calculates a factor f such that the force that a exerts on b
+  /** Calculates the atomic force norm f such that the force that a exerts on b
     * is f * a normalized vector pointing from b to a.
     * Positive = attraction, negative = repulsion */
-  private def forceFactor(atomA: Atom, atomB: Atom): Double = {
+  private def getAtomicForceNorm(atomA: Atom, atomB: Atom): Double = {
     // This function is similar to SurfaceDistanceScorer, except that on ideal distance it returns 0.
     // The root is 1, so normalize such that optimal distance --> 1
 
@@ -200,7 +198,45 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     explog(dNormalized)
   }
 
+  private def getElectricForceNorm(atomA: Atom, atomB: Atom): Double = {
+    val chargeProduct = atomA.partialCharge*atomB.partialCharge
+    val dist = atomA.distTo(atomB)
+
+    //Math.exp(-dist) * (- Math.signum(chargeProduct))  // For different charges, return positive value, else negative
+    if (chargeProduct < 0)
+      explog(dist)
+    else if (chargeProduct > 0)
+      minusExpOverX(dist)
+    else
+      0.0
+
+    /*if (chargeProduct < 0)                                  // different charges, attract
+      Math.max(atomicForceNorm, 0.0)                        // the atomic force, if distance > optimal
+    else if (chargeProduct > 0)                             // equal charges, reject
+      Math.min(atomicForceNorm, 0.0)                        // the atomic force, if distance < optimal
+    else                                                    // no charge
+      0.0*/
+  }
+
+  private def getBondForceNorm(atomA: Atom, atomB: Atom, avgBondEnergy: Double) = {
+    val bondEnergy = BondEnergy(atomA.element, atomB.element)
+    val dist = atomA.distTo(atomB)
+    val diff = bondEnergy - avgBondEnergy
+    if (diff > 0)
+      explog(dist)
+    else if (diff < 0)
+      minusExpOverX(dist)
+    else
+      0.0
+  }
+
+
+
+  /* --- Distance Functions --- */
+
   private def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
 
   private def explog(x: Double) = Math.exp(-Math.pow(x,2))*Math.log(x)
+
+  private def minusExpOverX(x: Double) = - Math.exp(-x) * 0.1 / x
 }

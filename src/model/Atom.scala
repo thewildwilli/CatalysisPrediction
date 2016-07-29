@@ -9,7 +9,7 @@ class Atom (elem: String, initX: Double, initY: Double, initZ: Double
             val substructureId: String = "",
             val substructureName: String = "") {
 
-  var _element = "C"
+  private var _element = "C"
   private var _radius = 1.4
   var coords = DenseVector(initX, initY, initZ)
   var isSurface = false
