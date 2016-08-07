@@ -10,15 +10,14 @@ import opt.HillClimbing
 
 
 // Created by Ernesto on 23/05/2016.
-object SurfaceAtomPairsWithTranslationDocker extends Docker {
+class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
 
   final val DeltaAngle = Math.toRadians(20) // 20 degrees in radians
   final val DeltaSpace = 0.1 // Angstrongs
 
-  def dock(molA: Molecule, molB: Molecule, scorer: Scorer,
-           log: ![Any] = null): DockingState = {
+  def dock(molA: Molecule, molB: Molecule, log: ![Any] = null) = {
     var maxScore = Double.NegativeInfinity
-    var bestMatch = null.asInstanceOf[DockingState]
+    var bestMatch = null.asInstanceOf[Molecule]
     var i=0
 
     for (x <- molA.Atoms.indices; y <- molB.Atoms.indices) {
@@ -27,7 +26,7 @@ object SurfaceAtomPairsWithTranslationDocker extends Docker {
         val score = scorer.score(optimized)
         if (score > maxScore) {
           maxScore = score
-          bestMatch = optimized
+          bestMatch = optimized.b
         }
 
         printf("docked %d of %d pairs, best score: %.4f %n", {
@@ -36,7 +35,7 @@ object SurfaceAtomPairsWithTranslationDocker extends Docker {
         }, molA.Atoms.count(a => a.isSurface) * molB.Atoms.count(a => a.isSurface), maxScore)
       }
     }
-    bestMatch
+    (bestMatch, maxScore)
   }
 
   private def dockPair2D(molA: Molecule, x: Int, molB: Molecule, y: Int, scorer: Scorer) = {

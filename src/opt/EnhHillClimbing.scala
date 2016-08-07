@@ -1,6 +1,6 @@
 package opt
 
-import docking.Decaying
+import docking.Decelerating
 import io.threadcso._
 
 // Created by Ernesto on 23/05/2016.
@@ -9,7 +9,7 @@ object EnhHillClimbing{
 
   def optimize[S](init: S, actions: (S) => Seq[Action],
                   transition: (S, Action) => S,
-                  decay: () => Unit,
+                  decelerate: () => Unit,
                   scoring: S => Double,
                   maxIters: Int,
                   log: ![Any]): S = {
@@ -46,7 +46,7 @@ object EnhHillClimbing{
           return bestState
         downCount += 1
 
-        decay() // went one step downhill, decay rate:
+        decelerate() // went one step downhill
       }
 
       currState = bestNeighbour             // move to best neighbour

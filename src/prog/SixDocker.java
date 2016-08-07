@@ -1,16 +1,14 @@
 package prog;// Created by Ernesto on 27/05/2016.
 
 import docking.Docker;
-import docking.DockingState;
 import docking.dockscore.SurfaceDistanceScorer;
 import docking.dockscore.Scorer;
-import docking.docksearch.SixInitialsDocker$;
+import docking.docksearch.SixInitialsDocker;
 import io.ChemicalFormatException;
 import io.PdbReader;
 import io.XyzWriter;
 import model.Atom;
 import model.Molecule;
-import opt.State;
 
 import java.io.IOException;
 
@@ -22,12 +20,12 @@ public class SixDocker {
         Molecule molB = new PdbReader(args[1]).read();
 
         Scorer scorer = new SurfaceDistanceScorer(1.4);
-        Docker docker = SixInitialsDocker$.MODULE$;
+        Docker docker = new SixInitialsDocker(scorer);
         System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass().getName(), scorer.toString()));
 
-        State finalState = docker.dock(molA, molB, scorer, null);
-        System.out.println("Final score: " + scorer.score(finalState));
-        Molecule molBDocked = ((DockingState)finalState).b();
+        scala.Tuple2<Molecule, Object> finalState = docker.dock(molA, molB, null);
+        System.out.println("Final score: " + finalState._1);
+        Molecule molBDocked = finalState._1;
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

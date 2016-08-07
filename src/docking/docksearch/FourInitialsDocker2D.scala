@@ -12,11 +12,11 @@ import opt.{Action, EnhHillClimbing}
   *   Then uses hill climbing from each of these to find a solution.
   *   Hill climbing needs to both rotate and translate molecule B.
   */
-object FourInitialsDocker2D extends Docker {
+class FourInitialsDocker2D(val scorer: Scorer) extends Docker {
   var InitialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   var InitialDeltaSpace = 1.0
 
-  def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]): DockingState = {
+  def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     val aRadius = molA.getRadius
     val bRadius = molB.getRadius
 
@@ -25,8 +25,10 @@ object FourInitialsDocker2D extends Docker {
     val over = DenseVector(0.0, aRadius + bRadius, 0.0)
     val under = DenseVector(0.0, -aRadius - bRadius, 0.0)
 
-    List(over, under, left, right).map(pos =>
+    val bestState = List(over, under, left, right).map(pos =>
       performDock(molA, molB, pos, scorer, log)).maxBy(scorer.score)
+
+    (bestState.b, scorer.score(bestState))
   }
 
   private def performDock(molA: Molecule, molB: Molecule, startPos: DenseVector[Double],

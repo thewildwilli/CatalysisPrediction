@@ -80,6 +80,7 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
       a.transform(m)
   }
 
+  // TODO: cache this!
   def getGeometricCentre = {
     // Add all coords vectors together and then divide by the number of atoms. Can be optimized caching.
     Atoms.map(a => a.coords).reduce(_+_) ./ (Atoms.size + 0.0)

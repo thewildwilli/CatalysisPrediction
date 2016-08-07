@@ -6,6 +6,7 @@ import java.util.NoSuchElementException
   *  This object holds a double entry table of bond dissociation energies. Given 2 elements,
   *  the table gives the energy needed to break a single bond of atoms of those two elements.
   *  Only a few elements supported so far.
+  *  https://labs.chem.ucsb.edu/zakarian/armen/11---bonddissociationenergy.pdf
   */
 object BondEnergy {
   val energies = Map(

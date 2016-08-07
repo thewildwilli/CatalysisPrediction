@@ -3,9 +3,7 @@ package prog;// Created by Ernesto on 26/05/2016.
 import docking.Docker;
 import docking.dockscore.SurfaceDistanceScorer;
 import docking.dockscore.Scorer;
-import docking.docksearch.AtomPairDocker;
-import docking.docksearch.AtomPairDocker$;
-import docking.docksearch.SurfaceAtomPairsWithTranslationDocker$;
+import docking.docksearch.SurfaceAtomPairsWithTranslationDocker;
 import io.ChemicalFormatException;
 import io.Pdb2DReader;
 import io.XyzWriter;
@@ -25,9 +23,9 @@ public class AtomPairWithSurfaceScoring {
         molB.computeSurfaceAtoms2D();
 
         Scorer scorer = new SurfaceDistanceScorer(0);
-        Docker docker = SurfaceAtomPairsWithTranslationDocker$.MODULE$;
+        Docker docker = new SurfaceAtomPairsWithTranslationDocker(scorer);
         System.out.println("docking with scorer: " + scorer.toString());
-        Molecule molBDocked = docker.dock(molA, molB, scorer, null).b();
+        Molecule molBDocked = docker.dock(molA, molB, null)._1;
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

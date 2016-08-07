@@ -21,7 +21,7 @@ public class Superimposer {
 
         Scorer scorer = SuperimpositionScorer$.MODULE$;
         System.out.println("docking with scorer: " + scorer.toString());
-        Molecule molBDocked = AtomPairDocker.dock(molA, molB, scorer, null).b();
+        Molecule molBDocked = new AtomPairDocker(scorer).dock(molA, molB,  null)._1;
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

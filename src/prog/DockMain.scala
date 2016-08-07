@@ -19,7 +19,7 @@ object DockMain {
     " [--ignorehydrogen] " +
     " [-balance atomic,electric,bond] "
 
-  val frame = new JmolFrame(500, 500, true)
+  val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
 
   val viewInitCmds = getViewInitCmds
@@ -37,26 +37,27 @@ object DockMain {
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
-    val scorer: Scorer = new SurfaceDistanceScorer(1.4)
     val docker = getDocker
 
     val chan = OneOne[Any]
-    var docked = null.asInstanceOf[DockingState]
-    (proc { docked = docker.dock(molA, molB, scorer, chan); chan.close } ||
-      showActions(chan, jmolPanel, scorer))()
+    var dockResult = (null.asInstanceOf[Molecule], 0.0)
+    (proc { dockResult = docker.dock(molA, molB, chan); chan.close } ||
+      showActions(chan, jmolPanel))()
 
-    new Mol2Writer(DockArgs.pathOut).write(docked.b)      // write docked b to file
+    val docked = dockResult._1
+    val score = dockResult._2
+
+    new Mol2Writer(DockArgs.pathOut).write(docked)      // write docked b to file
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathOut, "red"))  // show original a and modified b
     jmolPanel.execSeq(viewInitCmds)
 
-    println(s"Finished with score: ${scorer.score(docked)}, total time: ${System.currentTimeMillis()-startTime}ms")
+    println(s"Finished with score: $score, total time: ${System.currentTimeMillis()-startTime}ms")
   }
 
-  def showActions(chan: ?[Any], panel: JmolPanel, scorer: Scorer) = proc {
+  def showActions(chan: ?[Any], panel: JmolPanel) = proc {
     repeat {
       val s = chan? match {
         case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
-        case d: DockingState => s"score: ${scorer.score(d)}"
         case "save" => panel.exec(JmolCmds.save); "save"
         case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(viewInitCmds); "reset"
         case other => other.toString
@@ -72,11 +73,11 @@ object DockMain {
     * enhanced to use reflection.
     */
   def getDocker = DockArgs.dockerName match {
-      case "atompair" => AtomPairDocker
+      case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
 
       case "forcevector" => new ForceVectorDocker(
         surface = 1.4,
-        maxDecays = 10,
+        maxDecelerations = 10,
         ignoreHydrogen = DockArgs.ignoreHydrogen,
         atomicForceWeight = DockArgs.atomicForceWeight,
         electricForceWeight = DockArgs.electricForceWeight,

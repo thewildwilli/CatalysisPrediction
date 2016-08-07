@@ -9,13 +9,12 @@ import model.Molecule
 import opt.HillClimbing
 
 // Created by Ernesto on 23/05/2016.
-object AtomPairDocker extends Docker {
+class AtomPairDocker(val scorer: Scorer) extends Docker {
   final val DeltaAngle = Math.toRadians(20) // 20 degrees in radians
 
-  def dock(molA: Molecule, molB: Molecule, scorer: Scorer,
-           log: ![Any]): DockingState = {
+  def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     var maxScore = Double.NegativeInfinity
-    var bestMatch = null.asInstanceOf[DockingState]
+    var bestMatch = null.asInstanceOf[Molecule]
     var i=0
 
     for (x <- molA.Atoms.indices; y <- molB.Atoms.indices) {
@@ -23,12 +22,12 @@ object AtomPairDocker extends Docker {
       val score = scorer.score(optimized)
       if (score > maxScore) {
         maxScore = score
-        bestMatch = optimized
+        bestMatch = optimized.b
       }
 
       printf("docked %d of %d pairs, best score: %.4f %n", {i+=1;i}, molA.Atoms.size*molB.Atoms.size, maxScore)
     }
-    bestMatch
+    (bestMatch, maxScore)
   }
 
   private def dockPair(molA: Molecule, x: Int, molB: Molecule, y: Int,

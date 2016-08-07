@@ -8,3 +8,5 @@
 
 -a RNA_GGCGCC_Kiedrowski86_SimRNA.pdb -b RNA_CCGCGG_Kiedrowski86_SimRNA.pdb -out RNA_kiedrowski86_SimRNA_docked.xyz -docker forcevector
 -a RNA_GGCGCC_Kiedrowski86_SimRNA_WC.mol2 -b RNA_CCGCGG_Kiedrowski86_SimRNA_WC.mol2 -out RNA_kiedrowski86_SimRNA_docked_WC.xyz -docker forcevector
+
+-a HexamerWC.mol2 -b HexamerComplementWC.mol2 -out Hexamer_docked.mol2 -docker forcevector --ignorehydrogen -balance 1,1,1

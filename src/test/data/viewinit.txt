@@ -1,7 +1,8 @@
 select model=1.1
-cartoon only
+#cartoon only
 
 select model=2.1
-cartoon only
+#cartoon only
 
 model all
+background white

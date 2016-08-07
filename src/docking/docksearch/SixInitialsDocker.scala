@@ -14,11 +14,11 @@ import scala.collection.mutable.ListBuffer
   *   Then uses hill climbing from each of these to find a solution.
   *   Hill climbing needs to both rotate and translate molecule B.
   */
-object SixInitialsDocker extends Docker {
+class SixInitialsDocker(val scorer: Scorer) extends Docker {
   var InitialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   var InitialDeltaSpace = 0.1
 
-  def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]): DockingState = {
+  def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     val aRadius = molA.getRadius
     val bRadius = molB.getRadius
 
@@ -39,7 +39,8 @@ object SixInitialsDocker extends Docker {
       initials.append(i.clone.rotateZ(c, ang)); initials.append(i.clone.rotateZ(c, 2*ang)); initials.append(i.clone.rotateZ(c, 3*ang))
     }
 
-    initials.map(b => performDock(molA, b, scorer)).maxBy(scorer.score)
+    val best = initials.map(b => performDock(molA, b, scorer)).maxBy(scorer.score)
+    (best.b, scorer.score(best))
   }
 
   private def performDock(molA: Molecule, molB: Molecule, scorer: Scorer): DockingState = {
@@ -77,11 +78,11 @@ object SixInitialsDocker extends Docker {
 
 class AllNeighboursState(molA: Molecule, molB: Molecule,
                           var deltaAngle: Double = Math.toRadians(20), var deltaSpace: Double = 0.1)
-                          extends DockingState(molA, molB) with Decaying {
+                          extends DockingState(molA, molB) with Decelerating {
 
-  /** Decay parameters by half */
-  override def decayRate: Unit = {
-    println("decaying...")
+  /** Half parameters */
+  override def deceleratingRate: Unit = {
+    println("decelerating...")
     deltaAngle = deltaAngle / 2.0
     deltaSpace = deltaSpace / 2.0
   }

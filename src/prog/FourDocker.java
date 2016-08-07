@@ -4,7 +4,7 @@ import docking.Docker;
 import docking.DockingState;
 import docking.dockscore.SurfaceDistanceScorer;
 import docking.dockscore.Scorer;
-import docking.docksearch.FourInitialsDocker2D$;
+import docking.docksearch.FourInitialsDocker2D;
 import io.ChemicalFormatException;
 import io.Pdb2DReader;
 import io.XyzWriter;
@@ -22,12 +22,12 @@ public class FourDocker {
         Molecule molB = new Pdb2DReader(args[1]).read();
 
         Scorer scorer = new SurfaceDistanceScorer(0);
-        Docker docker = FourInitialsDocker2D$.MODULE$;
+        Docker docker = new FourInitialsDocker2D(scorer);
         System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass().getName(), scorer.toString()));
 
-        State finalState = docker.dock(molA, molB, scorer, null);
-        System.out.println("Final score: " + scorer.score(finalState));
-        Molecule molBDocked = ((DockingState)finalState).b();
+        scala.Tuple2<Molecule, Object> finalState = docker.dock(molA, molB, null);
+        System.out.println("Final score: " + finalState._2);
+        Molecule molBDocked = finalState._1;
 
         // Now create a molecule with both A's and B's atoms
         System.out.println("outputting to " + args[2]);

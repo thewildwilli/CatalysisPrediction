@@ -13,6 +13,7 @@ class JmolFrame(width: Int, height: Int, alwaysOnTop: Boolean) extends JFrame {
   pack()
   setVisible(true)
   setAlwaysOnTop(alwaysOnTop)
+  setTitle("Real time docking progress")
 
   def getPanel: JmolPanel = panel
 }

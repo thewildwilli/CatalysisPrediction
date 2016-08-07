@@ -11,7 +11,7 @@ import model._
 
 
 // FIX THE DESIGN A BIT!!!
-class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
+class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
                         val ignoreHydrogen: Boolean = false,
                         val atomicForceWeight: Double = .34,
                         val electricForceWeight: Double = .33,
@@ -25,7 +25,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
   var avgBondEnergy = 0.0
   var iter =0
 
-  override def dock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]) = {
+  override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     // First, make sure both molecules are centered -> move B into the centre of A
     val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
     log!new Translate(centreVect)
@@ -40,14 +40,15 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
         (molA.Atoms.size + molB.Atoms.size)
 
     initialConfigs.map(pos => {
-      dockFromPos(molA, molB, pos, scorer, 1.0e-5, avgBondEnergy, log)
-    }).maxBy(scorer.score)
+      dockFromPos(molA, molB, pos, 1.0e-5, avgBondEnergy, log)
+    }).minBy(p => p._2)
   }
 
-  /**  Docks b into a from b's initial position and orientation, using force vectors
+  /**  Docks b into a from b's initial position and orientation, using force vectors.
+    *   Try to minimize score
     */
   private def dockFromPos(molA: Molecule, b: Molecule,
-                           pos: DenseVector[Double], scorer: Scorer,
+                           pos: DenseVector[Double],
                            threshold: Double,
                            avgBondEnergy: Double, log: ![Any]) = {
 
@@ -60,31 +61,31 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     molB.translate(pos)
     log!new Translate(pos)
 
-    val state = new DockingState(molA, molB)
-
     var maxAngle = initialDeltaAngle
     var maxTranslate = initialDeltaSpace
 
-    var currScore = scorer.score(state)
-    var lastScore = Double.NegativeInfinity
+    var currScore = Double.PositiveInfinity
+    var lastScore = Double.PositiveInfinity
 
     var scoreChange = 0.0                             // how much has the score changed in the last iteration
     var lastScoreChange = Double.NegativeInfinity     // how much had the score changed in the previous interation
 
-    val radius = molA.getRadius + molB.getRadius
-
     var minTranslationApplied = false
 
 
-    while (lastScore == Double.NegativeInfinity               // first and second iterations
-      || scoreChange > threshold                              // good rate of score increase
-      || scoreChange < 0                                      // decayed
+    /*while (lastScore == Double.PositiveInfinity               // first and second iterations
+      || scoreChange < -threshold                             // good rate of score improvement
+      || scoreChange > 0                                      // decelerated
       || minTranslationApplied  ) {                           // min translation had to be applied because the molecules were too far apart
+    */
+    while (true) {
+      val forcesAndScores = getForces(molA, molB, avgBondEnergy)       // it is a list of tuples (atomB, force, score)
+      val forces = forcesAndScores.map(e => e._2)
+      val totalForceAmount = forces.map(f => norm(f)).sum
 
-      val forces = getForces(molA, molB, avgBondEnergy)  // it is a list of pairs (atomB, force)
-      val (translation, m) = getTranslation(forces, maxTranslate)
+      val (translation, m) = getTranslation(forces, totalForceAmount, maxTranslate)
       minTranslationApplied = m
-      val (axis, angle) = getRotation(molB, maxAngle, forces)
+      val (axis, angle) = getRotation(molB, maxAngle, forcesAndScores)
 
       molB.translate(translation)
       log!new Translate(translation)
@@ -93,40 +94,40 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
       log!new Rotate(molB.getGeometricCentre, axis, angle)
 
       lastScore = currScore
-      currScore = scorer.score(state)
+      currScore = forcesAndScores.map(e => e._3).sum
       lastScoreChange = scoreChange
       scoreChange = currScore - lastScore
 
-      if (scoreChange < 0){     // decelerate
+      if (scoreChange > 0){     // decelerate
         maxAngle = maxAngle * 0.9
         maxTranslate = maxTranslate * 0.9
       }
-
+      //println(s"score: $currScore, minTrans: $minTranslationApplied, maxAngle $maxAngle, maxTrans: $maxTranslate")
     }
-    state
+    (molB, currScore)
   }
 
   /** Returns a pair (vector, boolean). The vector has the translation,
     * the boolean indicates if minimum translation had to be applied
     */
-  private def getTranslation(atomForces: Seq[(Atom, DenseVector[Double])],
+  private def getTranslation(forces: Seq[DenseVector[Double]],
+                             totalForceAmount: Double,
                              maxTranslate: Double) = {
-    val forces = atomForces.map{ case (atomB, force) => force}
     val netForce = forces.reduce((a, b) => a + b)
-    val totalForceNorm = forces.map(f => norm(f)).sum
-    val (translateDistance, minApplied) =
-      if (totalForceNorm < minDeltaSpace)
-        (minDeltaSpace, true)
+    val minApplied = totalForceAmount < minDeltaSpace
+    val translateDistance =
+      if (minApplied)
+        minDeltaSpace
       else
-        (Math.min(norm(netForce), maxTranslate), false)
+        Math.min(norm(netForce), maxTranslate)
     val translation = (netForce * translateDistance) / norm(netForce)
     (translation, minApplied)
   }
 
   private def getRotation(molB: Molecule, maxAngle: Double,
-                          forces: Seq[(Atom, DenseVector[Double])]) = {
+                          forces: Seq[(Atom, DenseVector[Double], Double)]) = {
     // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
-    val torques = forces.map { case (atomB, force) =>
+    val torques = forces.map { case (atomB, force, score) =>
       val r = atomB.coords - molB.getGeometricCentre // radius vector from centre to atom
       linalg.cross(r, force)
     }
@@ -142,15 +143,19 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
   private def getForces(molA: Molecule, molB: Molecule, avgBondEnergy: Double) = {
     molB.Atoms
       .filter(atomB => !(ignoreHydrogen && atomB.isElement("H")))
-      .map(atomB => (atomB, molToAtomForce(molA, atomB) ))
+      .map(atomB => {
+        val forceAndScore = molToAtomForce(molA, atomB)
+        (atomB, forceAndScore._1, forceAndScore._2)
+      })
   }
 
   /** Calculates the total force that molA exerts on atomB: the sum
     * of the forces each atom in a exerts on atomB   */
-  private def molToAtomForce(molA: Molecule, atomB: Atom): DenseVector[Double] = {
+  private def molToAtomForce(molA: Molecule, atomB: Atom) = {
     molA.Atoms
       .filter(atomA => !(ignoreHydrogen && atomA.isElement("H")))
-      .map(atomA => atomToAtomForce(atomA, atomB, avgBondEnergy)).reduce((a, b) => a+b)
+      .map(atomA => atomToAtomForce(atomA, atomB, avgBondEnergy))
+      .reduce((a, b) => (a._1 + b._1, a._2 + b._2))
   }
 
   /** calculates the force that atomA excerts on atomB
@@ -162,12 +167,12 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     *     Equal forces reject if the distance is closer than the optimal distance.
     *     Different forces attract if the distance is farther than the optimal distance.
     * */
-  private def atomToAtomForce(atomA: Atom, atomB: Atom, avgBondEnergy: Double): DenseVector[Double] = {
+  private def atomToAtomForce(atomA: Atom, atomB: Atom, avgBondEnergy: Double) = {
     val dif = atomA.coords - atomB.coords;                    // direction from b to a
     val dir = dif / norm(dif);                                // normalized to length 1
 
     // Atomic force:
-    val atomicForceNorm = getAtomicForceNorm(atomA, atomB)
+    val (atomicForceNorm, atomicScore) = getAtomicForceNorm(atomA, atomB)
     val atomicForce = dir * atomicForceNorm
 
     // electric force:
@@ -177,25 +182,34 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     val bondForce = dir * getBondForceNorm(atomA, atomB, avgBondEnergy)
 
     // weighted result:
-    atomicForce * atomicForceWeight +
+    val force = atomicForce * atomicForceWeight +
       electricForce * electricForceWeight +
       bondForce * bondForceWeight
+
+    val score = atomicScore
+    (force, score)
   }
 
 
   /** Calculates the atomic force norm f such that the force that a exerts on b
     * is f * a normalized vector pointing from b to a.
     * Positive = attraction, negative = repulsion */
-  private def getAtomicForceNorm(atomA: Atom, atomB: Atom): Double = {
+  private def getAtomicForceNorm(atomA: Atom, atomB: Atom) = {
     // This function is similar to SurfaceDistanceScorer, except that on ideal distance it returns 0.
     // The root is 1, so normalize such that optimal distance --> 1
 
-    val optimal = atomA.radius + atomB.radius + 2 * surface // optimal distance
-    val actual = atomA.distTo(atomB)
-    val dNormalized = actual/optimal
-    //expsquare(dNormalized)
-    //Math.log(dNormalized)
-    explog(dNormalized)
+    val optimalDistance = atomA.radius + atomB.radius + 2 * surface // optimal distance
+    val actualDistance = atomA.distTo(atomB)
+    val normalized = actualDistance/optimalDistance
+    val force = explog(normalized)//val force = explog(normalized*1.327864011995167)
+
+    // Max of explog is reached at 1.327864011995167
+    //val score = -explog(normalized * 1.327864011995167)
+
+    // Max of expsquare is reached at sqrt(2)
+    val score = -expsquare(normalized * Math.sqrt(2.0))
+
+    (force, score)
   }
 
   private def getElectricForceNorm(atomA: Atom, atomB: Atom): Double = {
@@ -203,6 +217,7 @@ class ForceVectorDocker(val surface: Double, val maxDecays: Int = 10,
     val dist = atomA.distTo(atomB)
 
     //Math.exp(-dist) * (- Math.signum(chargeProduct))  // For different charges, return positive value, else negative
+    // TODO: shouldn't we take into account the amount chargeProduct??
     if (chargeProduct < 0)
       explog(dist)
     else if (chargeProduct > 0)

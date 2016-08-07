@@ -51,11 +51,13 @@ object JmolEmbedTest {
     val docker: Docker = new ForceVectorDocker(1.4)
 
     val chan = OneOne[Any]
-    var docked = null.asInstanceOf[DockingState]
-    (proc { docked = docker.dock(molA, molB, scorer, chan); chan.close } ||
+    var dockResult = (null.asInstanceOf[Molecule], 0.0)
+    (proc { dockResult = docker.dock(molA, molB, chan); chan.close } ||
       showActions(chan, jmolPanel, scorer))()
+    val docked = dockResult._1
+    val score = dockResult._2
 
-    new XyzWriter(args(2)).write(docked.b)      // write docked b to file
+    new XyzWriter(args(2)).write(docked)      // write docked b to file
     jmolPanel.openAndColor((args(0), "gray"), (args(2), "red"))  // show original a and modified b
 
 
