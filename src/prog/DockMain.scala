@@ -1,6 +1,5 @@
 package prog
 
-import docking.DockingState
 import docking.dockscore._
 import docking.docksearch._
 import io.Mol2Writer
