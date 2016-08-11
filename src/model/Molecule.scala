@@ -18,6 +18,7 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
   def translate(v: DenseVector[Double]): Unit = {
     for (a <- this.Atoms)
       a.translate(v)
+    _geometricCentre = None         // could update the centre too..
   }
 
   def rotate(centre: DenseVector[Double], axis: DenseVector[Double],
@@ -25,11 +26,6 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
     translate(centre * -1.0)
     transform(Geometry.rotate(axis, angRad))
     translate(centre)
-    /*transform ( Geometry.compose(
-      Geometry.translate(centre * -1.0),
-      Geometry.rotate(axis, angRad),
-      Geometry.translate(centre)
-    ))*/
   }
 
   /** Rotates the molecule with respect to X axis around a centre, angle in radians.
@@ -78,18 +74,24 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
   def transform(m: DenseMatrix[Double]) = {
     for (a <- Atoms)
       a.transform(m)
+    _geometricCentre = None         // could update the centre too
   }
 
-  // TODO: cache this!
+  var _geometricCentre: Option[DenseVector[Double]] = None
   def getGeometricCentre = {
-    // Add all coords vectors together and then divide by the number of atoms. Can be optimized caching.
-    Atoms.map(a => a.coords).reduce(_+_) ./ (Atoms.size + 0.0)
+    // Add all coords vectors together and then divide by the number of atoms.
+    if (_geometricCentre == None)
+      _geometricCentre = Some(Atoms.map(a => a.coords).reduce(_+_) ./ (Atoms.size + 0.0))
+    _geometricCentre.get
   }
 
   /** The molecule radius is the distance from the geometricCentre to its farthest atom */
+  var _radius: Option[Double] = None
   def getRadius = {
     val centre = getGeometricCentre
-    Atoms.map(a => a.distTo(centre)).max
+    if (_radius == None)
+      _radius = Some(Atoms.map(a => a.distTo(centre)).max)
+    _radius.get
   }
 
   def computeSurfaceAtoms3D() = computeSurfaceAtoms(6)
@@ -102,7 +104,12 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
 
 
   /** Deep copy */
-  override def clone = new Molecule(this.Atoms.map(a => a.clone))
+  override def clone = {
+    val m = new Molecule(this.Atoms.map(a => a.clone));
+    m._geometricCentre = this._geometricCentre;
+    m._radius = this._radius
+    m
+  }
 
   def setElement(e: String) = {
     for (a <- this.Atoms)
@@ -113,6 +120,8 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
   def importM(b: Molecule) = {
     for (bAtom <- b.Atoms)
       this.Atoms.append(bAtom.clone)
+    _geometricCentre = None
+    _radius = None
     this
   }
 
