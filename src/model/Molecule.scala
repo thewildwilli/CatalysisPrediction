@@ -18,7 +18,8 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
   def translate(v: DenseVector[Double]): Unit = {
     for (a <- this.Atoms)
       a.translate(v)
-    _geometricCentre = None         // could update the centre too..
+    if (_geometricCentre != None)
+      _geometricCentre = Some(_geometricCentre.get + v)
   }
 
   def rotate(centre: DenseVector[Double], axis: DenseVector[Double],

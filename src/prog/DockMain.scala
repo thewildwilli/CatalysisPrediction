@@ -38,7 +38,7 @@ object DockMain {
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val docker = getDocker
 
-    val chan = OneOne[Any]
+    val chan = OneOneBuf[Any](5)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
     (proc { dockResult = docker.dock(molA, molB, chan); chan.close } ||
       showActions(chan, jmolPanel))()
@@ -78,6 +78,7 @@ object DockMain {
         surface = 1.4,
         maxDecelerations = 10,
         ignoreHydrogen = DockArgs.ignoreHydrogen,
+        threshold = DockArgs.threshold,
         atomicForceWeight = DockArgs.atomicForceWeight,
         electricForceWeight = DockArgs.electricForceWeight,
         bondForceWeight = DockArgs.bondForceWeight
@@ -153,6 +154,7 @@ object DockMain {
 
     // Force vector docker specifics:
     var ignoreHydrogen = false
+    var threshold = 1.0e-5
       // Force vector force balance: either all 3 set, or all 3 with default values
     var atomicForceWeight = 1.0
     var electricForceWeight = 1.0
