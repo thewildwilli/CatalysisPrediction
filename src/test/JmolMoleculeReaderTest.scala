@@ -21,17 +21,17 @@ class JmolMoleculeReaderTest extends FlatSpec{
 
 
       assertResult(molAFromPdb.Atoms.size)(molAFromJmol.Atoms.size)
-      for (i <- molAFromPdb.Atoms.indices){
-        assert(floatAreSimilar(molAFromPdb.Atoms(i).x, molAFromJmol.Atoms(i).x))
-        assert(floatAreSimilar(molAFromPdb.Atoms(i).y, molAFromJmol.Atoms(i).y))
-        assert(floatAreSimilar(molAFromPdb.Atoms(i).z, molAFromJmol.Atoms(i).z))
+      for (i <- molAFromPdb.atomMap.keys){
+        assert(floatAreSimilar(molAFromPdb(i).x, molAFromJmol(i).x))
+        assert(floatAreSimilar(molAFromPdb(i).y, molAFromJmol(i).y))
+        assert(floatAreSimilar(molAFromPdb(i).z, molAFromJmol(i).z))
       }
 
       assertResult(molBFromPdb.Atoms.size) (molBFromJmol.Atoms.size)
-      for (i <- molBFromPdb.Atoms.indices){
-        assert(floatAreSimilar(molBFromPdb.Atoms(i).x, molBFromJmol.Atoms(i).x))
-        assert(floatAreSimilar(molBFromPdb.Atoms(i).y, molBFromJmol.Atoms(i).y))
-        assert(floatAreSimilar(molBFromPdb.Atoms(i).z, molBFromJmol.Atoms(i).z))
+      for (i <- molBFromPdb.atomMap.keys){
+        assert(floatAreSimilar(molBFromPdb(i).x, molBFromJmol(i).x))
+        assert(floatAreSimilar(molBFromPdb(i).y, molBFromJmol(i).y))
+        assert(floatAreSimilar(molBFromPdb(i).z, molBFromJmol(i).z))
       }
     }
 

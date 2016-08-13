@@ -8,11 +8,13 @@ import scala.collection.mutable.ArrayBuffer
 object JmolMoleculeReader {
   def read(panel: JmolPanel, modelIndex: Int): Molecule = {
     val ms =  panel.viewer.ms
-    val atoms = new ArrayBuffer[Atom]()
+    var atoms = Map[Int, Atom]()  // Atoms by id
 
+    // Create atoms
     for (jmolAtom <- ms.at)
       if (jmolAtom.mi == modelIndex)
-        atoms.append(new Atom(
+        atoms += (jmolAtom.i -> new Atom(
+          jmolAtom.i,
           jmolAtom.getElementSymbol,
           jmolAtom.x, jmolAtom.y, jmolAtom.z,
           jmolAtom.getPartialCharge,
@@ -22,7 +24,15 @@ object JmolMoleculeReader {
           jmolAtom.group.getGroup3
         ))
 
-    new Molecule(atoms)
+    // Run again through the list and create bonds
+    for (jmolAtom <- ms.at)
+      if (jmolAtom.mi == modelIndex)
+        for (bond <- jmolAtom.bonds) {
+          val other = bond.getOtherAtom(jmolAtom)
+          atoms(jmolAtom.i).addBond(other.i)
+        }
+
+    new Molecule(atoms.values)
   }
 
   /*def read(m: Model) = {

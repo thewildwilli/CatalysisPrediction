@@ -20,9 +20,9 @@ class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
     var bestMatch = null.asInstanceOf[Molecule]
     var i=0
 
-    for (x <- molA.Atoms.indices; y <- molB.Atoms.indices) {
-      if (molA(x).isSurface && molB(y).isSurface) {
-        val optimized = dockPair(molA, x, molB, y, scorer)
+    for (x <- molA.Atoms; y <- molB.Atoms) {
+      if (molA(x.id).isSurface && molB(y.id).isSurface) {
+        val optimized = dockPair(molA, x.id, molB, y.id, scorer)
         val score = scorer.score(optimized)
         if (score > maxScore) {
           maxScore = score

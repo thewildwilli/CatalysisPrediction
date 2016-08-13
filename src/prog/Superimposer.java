@@ -27,8 +27,8 @@ public class Superimposer {
         System.out.println("outputting to " + args[2]);
         Molecule result = molA.clone();
         result.setElement("O");
-        for (Atom bAtom : molBDocked.JAtoms())
-            result.JAtoms().add(bAtom);
+        for (Atom bAtom : molBDocked.JAtoms().values())
+            result.JAtoms().put(bAtom.id(), bAtom);
 
         new XyzWriter(args[2]).write(result);
     }

@@ -1,13 +1,15 @@
 //Created by Ernesto on 23/05/2016.
 package model
 import breeze.linalg.{DenseMatrix, DenseVector, norm}
+import scala.collection.mutable.ArrayBuffer
 
 /** Distances in Angstrongs */
-class Atom (elem: String, initX: Double, initY: Double, initZ: Double
+class Atom (val id: Int, elem: String, initX: Double, initY: Double, initZ: Double
            , val partialCharge: Double = 0.0,
             val atomName: String = "",
             val substructureId: String = "",
-            val substructureName: String = "") {
+            val substructureName: String = "",
+            var bonds: List[Int] = List()) {
 
   private var _element = "C"
   private var _radius = 1.4
@@ -25,6 +27,8 @@ class Atom (elem: String, initX: Double, initY: Double, initZ: Double
   def y = coords(1)
   def z = coords(2)
 
+  def addBond(atomIndex: Int) = { bonds ::= atomIndex }
+
   def distTo(other: Atom): Double = distTo(other.coords)
   def distTo(point: DenseVector[Double]): Double = norm(this.coords - point) //  Math.sqrt( Math.pow(this.x - point(0), 2) + Math.pow(this.y - point(1), 2) + Math.pow(this.z - point(2),2))
 
@@ -37,9 +41,10 @@ class Atom (elem: String, initX: Double, initY: Double, initZ: Double
     coords = updated(0 to 2)
   }
 
-  override def clone = new Atom(elem, this.x, this.y, this.z,
-                                this.partialCharge, this.atomName,
-                                this.substructureId, this.substructureName)
+  override def clone = {
+    new Atom(this.id, elem, this.x, this.y, this.z, this.partialCharge, this.atomName,
+      this.substructureId, this.substructureName, this.bonds)
+  }
 
   override def toString: String = s"Atom at $x, $y, $z with charge $partialCharge"
 }

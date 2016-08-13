@@ -19,7 +19,7 @@ public class Xyz2DWriter implements MoleculeWriter {
         try (FileWriter fw = new FileWriter(this.path)) {
             fw.write(m.Atoms().size() + "\n");        // First line: Atom count
             fw.write(this.path  + "\n");            // Second line: title
-            for (Atom a: m.JAtoms())
+            for (Atom a: m.JAtoms().values())
                 fw.write(String.format("%s %.3f %.3f %.3f%n", a.element(), + a.x(), a.y(), 0.0));
         }
     }

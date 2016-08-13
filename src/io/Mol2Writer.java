@@ -26,7 +26,7 @@ public class Mol2Writer implements MoleculeWriter {
 
             int serial = 1;
             fw.write("@<TRIPOS>ATOM\n");
-            for (Atom a: m.JAtoms())
+            for (Atom a: m.JAtoms().values())
                 fw.write(String.format(
                         " %5d %5s %18.8f %18.8f %18.8f %2s %4s %3s %18.8f%n",
                         serial++,

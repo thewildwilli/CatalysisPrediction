@@ -20,6 +20,7 @@ public class Pdb2DReader implements MoleculeReader {
     public Molecule read() throws IOException, ChemicalFormatException {
         Molecule result = new Molecule();
         String line;
+        int atomId = 1;
         try (BufferedReader br = new BufferedReader(new FileReader(this.path))) {
             while ((line = br.readLine()) != null) {
                 // If line is an ATOM line, process it
@@ -31,7 +32,8 @@ public class Pdb2DReader implements MoleculeReader {
                         double x = Double.parseDouble(line.substring(30, 38).trim());
                         double y = Double.parseDouble(line.substring(38, 46).trim());
                         double z = 0.0;
-                        result.JAtoms().add(new Atom("C", x, y, z, 0.0, "", "", ""));
+                        result.JAtoms().put(atomId, new Atom(atomId, "C", x, y, z, 0.0, "", "", "", null));
+                        atomId++;
                     }
                 }
             }

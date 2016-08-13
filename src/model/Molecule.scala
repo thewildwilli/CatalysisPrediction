@@ -5,15 +5,14 @@ package model
 import breeze.linalg.{DenseMatrix, DenseVector}
 
 import collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 
-class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
+class Molecule(var atomMap: Map[Int, Atom]) {
 
-  def this(l: Seq[Atom]) { this(new ArrayBuffer[Atom]()); for (a <- l) this.Atoms += a; }
-  def this(){ this (new ArrayBuffer[Atom]())}
+  def this(){ this (Map[Int, Atom]()) }
+  def this(l: Iterable[Atom]) { this(); for (a <- l) this.atomMap += (a.id -> a) }
 
-
-  def apply(i: Int) = Atoms(i)
+  def apply(i: Int) = atomMap(i)
+  def Atoms = atomMap.values
 
   def translate(v: DenseVector[Double]): Unit = {
     for (a <- this.Atoms)
@@ -120,13 +119,13 @@ class Molecule(val Atoms: scala.collection.mutable.ArrayBuffer[Atom]) {
   /** Adds clones of all atoms from b to this. Modifies this molecule and returns itself */
   def importM(b: Molecule) = {
     for (bAtom <- b.Atoms)
-      this.Atoms.append(bAtom.clone)
+      this.atomMap += (bAtom.id -> bAtom.clone)
     _geometricCentre = None
     _radius = None
     this
   }
 
-  def JAtoms = Atoms.asJava
+  def JAtoms = atomMap.asJava
 
 
 }

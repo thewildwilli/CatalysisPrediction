@@ -166,7 +166,7 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
   /** Returns a pair (vector, boolean). The vector has the translation,
     * the boolean indicates if minimum translation had to be applied
     */
-  private def getTranslation(forces: Seq[(Atom, DenseVector[Double])]) = {
+  private def getTranslation(forces: Iterable[(Atom, DenseVector[Double])]) = {
     val forcesOnly = forces.map(pair => pair._2)
     val netForce = forcesOnly.reduce((a, b) => a + b)
     val totalForceAmount = forcesOnly.map(f => norm(f)).sum
@@ -180,7 +180,7 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     (translation, minApplied)
   }
 
-  private def getRotation(centre: DenseVector[Double], forces: Seq[(Atom, DenseVector[Double])]) = {
+  private def getRotation(centre: DenseVector[Double], forces: Iterable[(Atom, DenseVector[Double])]) = {
     // torque in Euler axis/angle format is cross(r, force) - see http://web.mit.edu/8.01t/www/materials/modules/chapter21.pdf
     val torques = forces.map { case (atomB, force) =>
       val r = atomB.coords - centre // radius vector from centre to atom
@@ -340,14 +340,12 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 
             // optimal distance for hydrogen bond is 1.97 Angstrom
 
-            val electricScore = (
-              if (canHydrogenBond(a, b)) {
-               - (a.partialCharge * b.partialCharge) / (actualDistance * actualDistance)
-                //val normalized = actualDistance / 1.8
-                //- explog2(normalized * explog2.maxX) / explog2.maxY * a.partialCharge * b.partialCharge
-              }else
-                0.0
-              )
+            val electricScore = if (canHydrogenBond(a, b)) {
+              -(a.partialCharge * b.partialCharge) / (actualDistance * actualDistance)
+              //val normalized = actualDistance / 1.8
+              //- explog2(normalized * explog2.maxX) / explog2.maxY * a.partialCharge * b.partialCharge
+            } else
+              0.0
 
             geometricScore * atomicForceWeight + electricScore * electricForceWeight
           } else
@@ -372,7 +370,7 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 
   private def minusExpOverX(x: Double) = - Math.exp(-x) * 0.1 / x
 
-  /** exp(-(x-1)^2)*log(x)
+  /** exp(-(x-1) ** 2)*log(x)
     * peaks at 1.6290055996317214 with value 0.3285225256677019
     * */
   private object explog2 {
