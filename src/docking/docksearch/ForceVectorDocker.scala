@@ -17,6 +17,8 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
                         val bondForceWeight: Double = .33) extends Docker {
 
 
+  val hBondDistance = 1.8
+
   val initialDeltaAngle = Math.toRadians(5)
   val initialDeltaSpace = 0.5
   val minDeltaSpace = 1.0           // minimum to be used only when the molecules are too far apart
@@ -48,6 +50,8 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 
     molB.rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
     log!new Rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
+    //molB.rotate(molB.getGeometricCentre, DenseVector(1.0, 0.0, 0.0), Math.toRadians(180))
+    //log!new Rotate(molB.getGeometricCentre, DenseVector(1.0, 0.0, 0.0), Math.toRadians(180))
 
     log!"save"
 
@@ -250,7 +254,8 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     val bondForce = dir * getBondForceNorm(atomA, atomB, actualDistance)
 
     // weighted result:
-    val force = atomicForce * atomicForceWeight +
+    val force =
+      atomicForce * atomicForceWeight +
       electricForce * electricForceWeight +
       bondForce * bondForceWeight
 
@@ -271,23 +276,31 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
   }
 
   private def getElectricForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double): Double = {
-    val chargeProduct = atomA.partialCharge*atomB.partialCharge
 
-    //Math.exp(-dist) * (- Math.signum(chargeProduct))  // For different charges, return positive value, else negative
-    // TODO: shouldn't we take into account the amount chargeProduct??
-    if (chargeProduct < 0)
+    if (canHydrogenBond(atomA, atomB)){
+      //val normalized = actualDistance / 1.97
+      - (atomA.partialCharge * atomB.partialCharge) / Math.pow(actualDistance, 2)
+    } else
+      0.0
+
+    //val chargeProduct = atomA.partialCharge*atomB.partialCharge
+    //-chargeProduct / (actualDistance*actualDistance) // Coulomb
+
+   /* (if (chargeProduct < 0)
       explog(actualDistance)
     else if (chargeProduct > 0)
       minusExpOverX(actualDistance)
     else
-      0.0
+     0.0) * Math.abs(chargeProduct)
+*/
+  }
 
-    /*if (chargeProduct < 0)                                  // different charges, attract
-      Math.max(atomicForceNorm, 0.0)                        // the atomic force, if distance > optimal
-    else if (chargeProduct > 0)                             // equal charges, reject
-      Math.min(atomicForceNorm, 0.0)                        // the atomic force, if distance < optimal
-    else                                                    // no charge
-      0.0*/
+  private def canHydrogenBond(atomA: Atom, atomB: Atom) = {
+    def isHBond(a: Atom, b: Atom) =
+      (a.isElement("H") && a.partialCharge > 0 && b.partialCharge < 0
+        && (b.isElement("F") || b.isElement("O") || b.isElement("N")))
+
+    isHBond(atomA, atomB) || isHBond(atomB, atomA)
   }
 
   private def getBondForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double) = {
@@ -322,10 +335,21 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
         val actualDistance = a.distTo(b)
         totalScore += (
           if (!onlyTargetRadius || actualDistance <= optimalDistance(a, b) * minCoverage) {
-            //  function exp(-(x-1)^2)*log(x)  peaks at 1.6290055996317214 with value 0.3285225256677019
-            val x = (actualDistance / optimalDistance(a, b)) * 1.6290055996317214
-            val y = Math.exp(-Math.pow(x - 1, 2)) * Math.log(x)
-            y / 0.3285225256677019
+            val x = actualDistance / optimalDistance(a, b)
+            val geometricScore = explog2(x * explog2.maxX) / explog2.maxY   // ignore H for geometric?
+
+            // optimal distance for hydrogen bond is 1.97 Angstrom
+
+            val electricScore = (
+              if (canHydrogenBond(a, b)) {
+               - (a.partialCharge * b.partialCharge) / (actualDistance * actualDistance)
+                //val normalized = actualDistance / 1.8
+                //- explog2(normalized * explog2.maxX) / explog2.maxY * a.partialCharge * b.partialCharge
+              }else
+                0.0
+              )
+
+            geometricScore * atomicForceWeight + electricScore * electricForceWeight
           } else
             0.0
           )
@@ -333,6 +357,7 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     }
     totalScore / (Math.min(aCount, bCount))       // over atom count of smallest molecule
   }
+
 
 
 
@@ -346,4 +371,13 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
   private def explog(x: Double) = Math.exp(-Math.pow(x,2))*Math.log(x)    // Max of explog is reached at 1.327864011995167
 
   private def minusExpOverX(x: Double) = - Math.exp(-x) * 0.1 / x
+
+  /** exp(-(x-1)^2)*log(x)
+    * peaks at 1.6290055996317214 with value 0.3285225256677019
+    * */
+  private object explog2 {
+    def apply(x: Double) = Math.exp(-Math.pow(x - 1, 2)) * Math.log(x)
+    val maxX = 1.6290055996317214
+    val maxY = 0.3285225256677019
+  }
 }

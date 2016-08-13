@@ -75,7 +75,7 @@ object DockMain {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
 
       case "forcevector" => new ForceVectorDocker(
-        surface = 1.4,
+        surface = 1.4,        //TODO we should not need a surface...
         maxDecelerations = 10,
         ignoreHydrogen = DockArgs.ignoreHydrogen,
         threshold = DockArgs.threshold,
