@@ -1,5 +1,6 @@
 package model
 
+import breeze.linalg
 import breeze.linalg._
 
 /**
@@ -95,6 +96,24 @@ object Geometry {
     }
 
     orientations.filter(o => o != null)
+  }
+
+  /**
+    * Project p onto the line that passes through x1 and x2, and return
+    * the fraction t such that: projection = x1 + (x2-x1) t.
+    * For t = 0, p projects on x1, for t = 1, p projects on x2.
+    * http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+    */
+  def project(x1: DenseVector[Double], x2: DenseVector[Double], p: DenseVector[Double]) = {
+    - ((x1 - p) dot (x2 - x1)) / Math.pow(norm(x2 - x1), 2)
+  }
+
+  /**
+    * Distance of point p to the line that passes through x1 and x2.
+    * http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+    */
+  def distToLine (x1: DenseVector[Double], x2: DenseVector[Double], p: DenseVector[Double]) = {
+    norm(linalg.cross(p - x1, p - x2)) / norm(x2-x1)
   }
 
 

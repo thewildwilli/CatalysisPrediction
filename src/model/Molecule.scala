@@ -94,13 +94,22 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     _radius.get
   }
 
-  def computeSurfaceAtoms3D() = computeSurfaceAtoms(6)
-  def computeSurfaceAtoms2D() = computeSurfaceAtoms(4)
-  private def computeSurfaceAtoms(maxNeighbours: Int) = {
+  /* This is now taken from JMOL
+  def computeSurfaceAtoms() = {
     for (a <- Atoms) {
-      a.isSurface = Atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= maxNeighbours //ne = reference inequality. 216 is C=C bond length.
+      val pointsInSurface = Geometry.sphereOrientations(a.radius, Math.toRadians(45))
+      a.isSurface = pointsInSurface.exists(point =>
+        !Atoms.exists(other => (other ne a) && other.distTo(point) < other.radius) )
+    }
+
+  }*/
+
+  def computeSurfaceAtoms2D() = {
+    for (a <- Atoms) {
+      a.isSurface = Atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= 4 //ne = reference inequality. 216 is C=C bond length.
     }
   }
+
 
 
   /** Deep copy */

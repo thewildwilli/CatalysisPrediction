@@ -42,6 +42,8 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
   val window = 5                  // Assess score every window iterations
   var approachPhase = true
 
+  var hBondSpots: Map[Int, DenseVector[Double]] = null
+
   override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     // First, make sure both molecules are centered -> move B into the centre of A
     val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
@@ -61,6 +63,8 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     avgBondEnergy =
       (for (a <- molA.Atoms; b <- molB.Atoms) yield BondEnergy(a.element, b.element)).sum /
         (molA.Atoms.size * molB.Atoms.size)
+
+    hBondSpots = getHBondMap(molA)
 
     val result =
     initialConfigs.map(pos => {
@@ -129,12 +133,12 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     if (i % window == 0) {
 
       if (currScore - lastScore < threshold) {
-        if (decelerations >= 3  && !approachPhase) {
+        if (decelerations >= 10  && !approachPhase) {
           done = true
         } else {
           // decelerate
-          maxAngle = maxAngle * 0.75
-          maxTranslate = maxTranslate * 0.75
+          maxAngle = maxAngle * 0.9
+          maxTranslate = maxTranslate * 0.9
           softness = Math.max(softness - 0.2, 0)
           decelerations += 1
 
@@ -190,11 +194,12 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     val netTorqueNorm = norm(netTorque)
     val axis = netTorque / netTorqueNorm // normalize
 
-    // calculate moment of inertia with all atoms assumed weight 1:
+    // calculate moment of inertia with all atoms assumed weight 0.1 otherwise angles are too small:
     var moi = 0.0
-    for( (atom, force ) <- forces){
-      val distToAxis = norm(linalg.cross(atom.coords - centre, atom.coords - (centre+netTorque))) / norm(netTorque-centre)  //http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-      moi += 1.0* distToAxis*distToAxis
+    for( (atom, force ) <- forces) {
+      //val distToAxis = norm(linalg.cross(atom.coords - centre, atom.coords - (centre+netTorque))) / norm(netTorque-centre)  //http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+      val distToAxis = Geometry.distToLine(centre, centre + netTorque, atom.coords)
+      moi += 0.1 * distToAxis*distToAxis
     }
 
     val angle = Math.min(netTorqueNorm / moi, maxAngle)
@@ -210,7 +215,7 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
       for (atomA <- molA.Atoms if !(ignoreHydrogen && atomB.isElement("H"))){
         val cover = if (approachPhase) distToACenter else optimalDistance(atomA, atomB) * minCoverage;
         if (atomA.distTo(atomB) <= cover)
-          forceOnAtomB += atomToAtomForce(atomA, atomB)
+          forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
       }
       (atomB, forceOnAtomB)
     }
@@ -222,10 +227,10 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 
   /** Calculates the total force that molA exerts on atomB: the sum
     * of the forces each atom in a exerts on atomB   */
-  private def molToAtomForce(molA: Molecule, atomB: Atom) = {
+  private def molToAtomForce(molA: Molecule, atomB: Atom, molB: Molecule) = {
     molA.Atoms
       .filter(atomA => !(ignoreHydrogen && atomA.isElement("H")))
-      .map(atomA => atomToAtomForce(atomA, atomB))
+      .map(atomA => atomToAtomForce(atomA, atomB, molA, molB))
       .reduce((a,b) => a+b)
   }
 
@@ -238,17 +243,31 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     *     Equal forces reject if the distance is closer than the optimal distance.
     *     Different forces attract if the distance is farther than the optimal distance.
     * */
-  private def atomToAtomForce(atomA: Atom, atomB: Atom) = {
+  private def atomToAtomForce(atomA: Atom, atomB: Atom,
+                              molA: Molecule, molB: Molecule): DenseVector[Double] = {
     val dif = atomA.coords - atomB.coords;                    // direction from b to a
     val actualDistance = norm(dif)
     val dir = dif / actualDistance;                                // normalized to length 1
+
+    // if someone in the way, then no force
+    for (other <- molA.Atoms ++ molB.Atoms if (other ne atomA) && (other ne atomB)){
+      val t = Geometry.project(atomB.coords, atomA.coords, other.coords)
+      if (t > 0 && t < 1) {
+        val d = Geometry.distToLine(atomB.coords, atomA.coords, other.coords)
+        if (d < other.radius) {
+          //println(s"Force from ${atomB.id} to ${atomA.id} is none because ${other.id} is in the way")
+          return DenseVector(0.0, 0.0, 0.0)
+        }
+      }
+    }
+
 
     // Atomic force:
     val atomicForceNorm = getAtomicForceNorm(actualDistance, optimalDistance(atomA, atomB))
     val atomicForce = dir * atomicForceNorm
 
     // electric force:
-    val electricForce = dir * getElectricForceNorm(atomA, atomB, actualDistance)
+    val electricForce = getElectricForce(atomA, atomB, molA, molB, actualDistance)
 
     // bond force:
     val bondForce = dir * getBondForceNorm(atomA, atomB, actualDistance)
@@ -275,13 +294,19 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     force
   }
 
-  private def getElectricForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double): Double = {
+  private def getElectricForce(atomA: Atom, atomB: Atom, molA: Molecule,
+                                   molB: Molecule, actualDistance: Double) = {
 
-    if (canHydrogenBond(atomA, atomB)){
-      //val normalized = actualDistance / 1.97
-      - (atomA.partialCharge * atomB.partialCharge) / Math.pow(actualDistance, 2)
+    if (canHydrogenBond(atomA, atomB, molA, molB)){
+      val hBondSpot = getHydrogenBondSpot(atomA, molA)
+      val bToSpot = hBondSpot - atomB.coords
+      val dist = norm(bToSpot)
+      val bToSpotDir = bToSpot / dist
+      //val force = - (atomA.partialCharge * atomB.partialCharge) / Math.pow(dist, 1)
+      val force = - dist * Math.exp(-Math.pow(dist, 1)) * atomA.partialCharge * atomB.partialCharge
+      bToSpotDir * force
     } else
-      0.0
+      DenseVector(0.0, 0.0, 0.0)
 
     //val chargeProduct = atomA.partialCharge*atomB.partialCharge
     //-chargeProduct / (actualDistance*actualDistance) // Coulomb
@@ -295,12 +320,27 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 */
   }
 
-  private def canHydrogenBond(atomA: Atom, atomB: Atom) = {
-    def isHBond(a: Atom, b: Atom) =
+  private def canHydrogenBond(atomA: Atom, atomB: Atom, molA: Molecule, molB: Molecule) = {
+    def canHBond(a: Atom, b: Atom, molA: Molecule, molB: Molecule) =
       (a.isElement("H") && a.partialCharge > 0 && b.partialCharge < 0
-        && (b.isElement("F") || b.isElement("O") || b.isElement("N")))
+        && (b.isElement("F") || b.isElement("O") || b.isElement("N"))
+        && a.bonds.size == 1
+        && {
+          val aNeighbour = molA(a.bonds(0));
+          aNeighbour.partialCharge < 0 &&
+            (aNeighbour.isElement("F") || aNeighbour.isElement("O") || aNeighbour.isElement("N"))
+          }
+      )
+    canHBond(atomA, atomB, molA, molB) //|| canHBond(atomB, atomA, molB, molA)
+  }
 
-    isHBond(atomA, atomB) || isHBond(atomB, atomA)
+  // where atomA is a H and atom B is F, O, or N
+  private def getHydrogenBondSpot(atomA: Atom, molA: Molecule) = {
+    val aNeighbour = molA(atomA.bonds(0))
+    val dirToNeighour = aNeighbour.coords - atomA.coords
+    val toSpot = - (dirToNeighour / norm(dirToNeighour)) * 1.8 // 1.8 Angtrom in the opposite direction
+    val spot = atomA.coords + toSpot
+    spot
   }
 
   private def getBondForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double) = {
@@ -340,8 +380,14 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
 
             // optimal distance for hydrogen bond is 1.97 Angstrom
 
-            val electricScore = if (canHydrogenBond(a, b)) {
-              -(a.partialCharge * b.partialCharge) / (actualDistance * actualDistance)
+            val electricScore = if (canHydrogenBond(a, b, molA, molB)) {
+              val hBondSpot = getHydrogenBondSpot(a, molA)
+              val bToSpot = hBondSpot - b.coords
+              val bToSpotNorm = norm(bToSpot)
+              -(a.partialCharge * b.partialCharge) / (bToSpotNorm*bToSpotNorm)
+
+
+              //-(a.partialCharge * b.partialCharge) / (actualDistance * actualDistance)
               //val normalized = actualDistance / 1.8
               //- explog2(normalized * explog2.maxX) / explog2.maxY * a.partialCharge * b.partialCharge
             } else
@@ -377,5 +423,27 @@ class ForceVectorDocker(val surface: Double, val maxDecelerations: Int = 10,
     def apply(x: Double) = Math.exp(-Math.pow(x - 1, 2)) * Math.log(x)
     val maxX = 1.6290055996317214
     val maxY = 0.3285225256677019
+  }
+
+
+  // ----
+  def getHBondMap(mol: Molecule) = {
+    var result = Map[Int, DenseVector[Double]]()
+    for (atom <- mol.Atoms){
+      if ( atom.isElement("H") && atom.partialCharge > 0
+      && atom.bonds.size == 1
+      && {
+        val aNeighbour = mol(atom.bonds(0));
+        aNeighbour.partialCharge < 0 &&
+          (aNeighbour.isElement("F") || aNeighbour.isElement("O") || aNeighbour.isElement("N"))
+      }) {
+        val hBondSpot = getHydrogenBondSpot(atom, mol)
+        val closestAtom = mol.Atoms.minBy(a => a.distTo(hBondSpot))
+        if (closestAtom.distTo(hBondSpot) >= closestAtom.radius) {
+          result += (atom.id -> hBondSpot)
+        }
+      }
+    }
+    result
   }
 }

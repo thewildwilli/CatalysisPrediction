@@ -4,17 +4,17 @@ import breeze.linalg.{DenseMatrix, DenseVector, norm}
 import scala.collection.mutable.ArrayBuffer
 
 /** Distances in Angstrongs */
-class Atom (val id: Int, elem: String, initX: Double, initY: Double, initZ: Double
-           , val partialCharge: Double = 0.0,
+class Atom (val id: Int, elem: String, initX: Double, initY: Double, initZ: Double,
+            var partialCharge: Double = 0.0,
             val atomName: String = "",
-            val substructureId: String = "",
-            val substructureName: String = "",
-            var bonds: List[Int] = List()) {
+            var substructureId: String = "",
+            var substructureName: String = "",
+            var bonds: List[Int] = List(),
+            var isSurface: Boolean = false) {
 
   private var _element = "C"
   private var _radius = 1.4
   var coords = DenseVector(initX, initY, initZ)
-  var isSurface = false
 
   setElement(elem)
 
@@ -43,8 +43,8 @@ class Atom (val id: Int, elem: String, initX: Double, initY: Double, initZ: Doub
 
   override def clone = {
     new Atom(this.id, elem, this.x, this.y, this.z, this.partialCharge, this.atomName,
-      this.substructureId, this.substructureName, this.bonds)
+      this.substructureId, this.substructureName, this.bonds, this.isSurface)
   }
 
-  override def toString: String = s"Atom at $x, $y, $z with charge $partialCharge"
+  override def toString: String = s"Atom $id $element at $x, $y, $z with charge $partialCharge"
 }
