@@ -20,14 +20,14 @@ class JmolMoleculeReaderTest extends FlatSpec{
       val molBFromJmol = JmolMoleculeReader.read(jmolPanel, 1)
 
 
-      assertResult(molAFromPdb.Atoms.size)(molAFromJmol.Atoms.size)
+      assertResult(molAFromPdb.atoms.size)(molAFromJmol.atoms.size)
       for (i <- molAFromPdb.atomMap.keys){
         assert(floatAreSimilar(molAFromPdb(i).x, molAFromJmol(i).x))
         assert(floatAreSimilar(molAFromPdb(i).y, molAFromJmol(i).y))
         assert(floatAreSimilar(molAFromPdb(i).z, molAFromJmol(i).z))
       }
 
-      assertResult(molBFromPdb.Atoms.size) (molBFromJmol.Atoms.size)
+      assertResult(molBFromPdb.atoms.size) (molBFromJmol.atoms.size)
       for (i <- molBFromPdb.atomMap.keys){
         assert(floatAreSimilar(molBFromPdb(i).x, molBFromJmol(i).x))
         assert(floatAreSimilar(molBFromPdb(i).y, molBFromJmol(i).y))

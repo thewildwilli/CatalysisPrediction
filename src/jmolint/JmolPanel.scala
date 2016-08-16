@@ -37,6 +37,7 @@ class JmolPanel extends JPanel {
   }
 
   def openFiles(paths: Seq[String]) {
+    execSync(s"set pdbAddHydrogens true")
     execSync(JmolCmds.loadFiles(paths))
     exec(JmolCmds.showAllModels)
   }
@@ -47,8 +48,7 @@ class JmolPanel extends JPanel {
     openFiles(paths)
     val colours = pathsAndColors.map(pair => pair._2)
     for (i <- colours.indices) {
-      exec(JmolCmds.modelColor(s"${i+1}.1", colours(i)))
-
+      execSync(JmolCmds.modelColor(s"${i+1}.1", colours(i)))
     }
 
   }

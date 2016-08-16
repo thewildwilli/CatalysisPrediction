@@ -12,10 +12,14 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   def this(l: Iterable[Atom]) { this(); for (a <- l) this.atomMap += (a.id -> a) }
 
   def apply(i: Int) = atomMap(i)
-  def Atoms = atomMap.values
+  def atoms = atomMap.values
+  def surfaceAtoms: Iterable[Atom] = surfaceAtoms(false)
+  def surfaceAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => a.isSurface && !(ignoreHydrogen && a.isElement("H")))
+
+  def atomsBoundTo(a: Atom) = a.bonds.map(i => atomMap(i))
 
   def translate(v: DenseVector[Double]): Unit = {
-    for (a <- this.Atoms)
+    for (a <- this.atoms)
       a.translate(v)
     if (_geometricCentre != None)
       _geometricCentre = Some(_geometricCentre.get + v)
@@ -72,7 +76,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   }
 
   def transform(m: DenseMatrix[Double]) = {
-    for (a <- Atoms)
+    for (a <- atoms)
       a.transform(m)
     _geometricCentre = None         // could update the centre too
   }
@@ -81,7 +85,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   def getGeometricCentre = {
     // Add all coords vectors together and then divide by the number of atoms.
     if (_geometricCentre == None)
-      _geometricCentre = Some(Atoms.map(a => a.coords).reduce(_+_) ./ (Atoms.size + 0.0))
+      _geometricCentre = Some(atoms.map(a => a.coords).reduce(_+_) ./ (atoms.size + 0.0))
     _geometricCentre.get
   }
 
@@ -90,7 +94,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   def getRadius = {
     val centre = getGeometricCentre
     if (_radius == None)
-      _radius = Some(Atoms.map(a => a.distTo(centre)).max)
+      _radius = Some(atoms.map(a => a.distTo(centre)).max)
     _radius.get
   }
 
@@ -105,8 +109,8 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   }*/
 
   def computeSurfaceAtoms2D() = {
-    for (a <- Atoms) {
-      a.isSurface = Atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= 4 //ne = reference inequality. 216 is C=C bond length.
+    for (a <- atoms) {
+      a.isSurface = atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= 4 //ne = reference inequality. 216 is C=C bond length.
     }
   }
 
@@ -114,20 +118,20 @@ class Molecule(var atomMap: Map[Int, Atom]) {
 
   /** Deep copy */
   override def clone = {
-    val m = new Molecule(this.Atoms.map(a => a.clone));
+    val m = new Molecule(this.atoms.map(a => a.clone));
     m._geometricCentre = this._geometricCentre;
     m._radius = this._radius
     m
   }
 
   def setElement(e: String) = {
-    for (a <- this.Atoms)
+    for (a <- this.atoms)
       a.setElement(e)
   }
 
   /** Adds clones of all atoms from b to this. Modifies this molecule and returns itself */
   def importM(b: Molecule) = {
-    for (bAtom <- b.Atoms)
+    for (bAtom <- b.atoms)
       this.atomMap += (bAtom.id -> bAtom.clone)
     _geometricCentre = None
     _radius = None

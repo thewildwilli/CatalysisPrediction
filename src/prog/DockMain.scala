@@ -28,7 +28,7 @@ object DockMain {
     parseArgs(args)
 
     jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathB, "red"))
-    jmolPanel.exec(
+    jmolPanel.execSync(
       setLog(0),
       zoom(50),
       save
@@ -75,9 +75,9 @@ object DockMain {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
 
       case "forcevector" => new ForceVectorDocker(
-        surface = 0.0,        //TODO we should not need a surface...
+        surface = 1.4,        //TODO this should be a constant
         maxDecelerations = 10,
-        ignoreHydrogen = DockArgs.ignoreHydrogen,
+        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
         threshold = DockArgs.threshold,
         atomicForceWeight = DockArgs.atomicForceWeight,
         electricForceWeight = DockArgs.electricForceWeight,
@@ -112,7 +112,7 @@ object DockMain {
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
-          case "--ignorehydrogen" => DockArgs.ignoreHydrogen = true; i += 1
+          case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 3)
@@ -153,7 +153,7 @@ object DockMain {
     var consoleLog = false
 
     // Force vector docker specifics:
-    var ignoreHydrogen = false
+    var ignoreAHydrogens = false
     var threshold = 1.0e-5
       // Force vector force balance: either all 3 set, or all 3 with default values
     var atomicForceWeight = 1.0

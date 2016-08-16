@@ -11,11 +11,11 @@ object SuperimpositionScorer extends Scorer {
   def score(state: State) = {
     val s = state.asInstanceOf[DockingState]
     var score = 0.0
-    for (atomA <- s.a.Atoms) {
+    for (atomA <- s.a.atoms) {
       var bestA = 0.0
-      val closestBAtom = s.b.Atoms.minBy(atomB => atomA.distTo(atomB))
+      val closestBAtom = s.b.atoms.minBy(atomB => atomA.distTo(atomB))
       score += Math.exp(-atomA.distTo(closestBAtom))
     }
-    score / (s.a.Atoms.size * s.b.Atoms.size)     // score as a fraction. 1 = perfect superposition.
+    score / (s.a.atoms.size * s.b.atoms.size)     // score as a fraction. 1 = perfect superposition.
   }
 }

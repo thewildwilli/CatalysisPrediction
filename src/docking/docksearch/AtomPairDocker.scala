@@ -17,7 +17,7 @@ class AtomPairDocker(val scorer: Scorer) extends Docker {
     var bestMatch = null.asInstanceOf[Molecule]
     var i=0
 
-    for (x <- molA.Atoms; y <- molB.Atoms) {
+    for (x <- molA.atoms; y <- molB.atoms) {
       val optimized = dockPair2D(molA, x.id, molB, y.id, scorer, log)
       val score = scorer.score(optimized)
       if (score > maxScore) {
@@ -25,7 +25,7 @@ class AtomPairDocker(val scorer: Scorer) extends Docker {
         bestMatch = optimized.b
       }
 
-      printf("docked %d of %d pairs, best score: %.4f %n", {i+=1;i}, molA.Atoms.size*molB.Atoms.size, maxScore)
+      printf("docked %d of %d pairs, best score: %.4f %n", {i+=1;i}, molA.atoms.size*molB.atoms.size, maxScore)
     }
     (bestMatch, maxScore)
   }

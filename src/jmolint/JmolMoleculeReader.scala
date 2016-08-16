@@ -1,8 +1,6 @@
 package jmolint
 
 import model._
-import org.jmol.script.T
-
 
 
 // Created by Ernesto on 13/07/2016.

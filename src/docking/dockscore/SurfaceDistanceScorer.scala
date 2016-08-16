@@ -15,10 +15,10 @@ class SurfaceDistanceScorer(val surface: Double = 1.4) extends Scorer {
   def score(state: State) = {
     val s = state.asInstanceOf[DockingState]
     var score = 0.0
-    for (atomA <- s.a.Atoms; atomB <- s.b.Atoms) {
+    for (atomA <- s.a.atoms; atomB <- s.b.atoms) {
       score += scoreDist(atomA, atomB)
     }
-    score / (s.a.Atoms.size * s.b.Atoms.size).toDouble
+    score / (s.a.atoms.size * s.b.atoms.size).toDouble
   }
 
   def scoreDist(atomA: Atom, atomB: Atom) = {
