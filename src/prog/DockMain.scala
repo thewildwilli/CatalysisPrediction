@@ -16,7 +16,9 @@ object DockMain {
     "-out (B's output path, xyz format) " +
     "-docker (atompair|forcevector) [--consolelog] " +
     " [--ignorehydrogen] " +
-    " [-balance atomic,electric,bond] "
+    " [surface s] " +
+    " [-balance atomic,electric,hydrogenbond,bondstrength] " +
+    " [-threshold t]"
 
   val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
@@ -75,12 +77,13 @@ object DockMain {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
 
       case "forcevector" => new ForceVectorDocker(
-        surface = 1.4,        //TODO this should be a constant
+        surface = DockArgs.surface,
         maxDecelerations = 10,
         ignoreAHydrogens = DockArgs.ignoreAHydrogens,
         threshold = DockArgs.threshold,
-        atomicForceWeight = DockArgs.atomicForceWeight,
+        geometricForceWeight = DockArgs.geometricForceWeight,
         electricForceWeight = DockArgs.electricForceWeight,
+        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
         bondForceWeight = DockArgs.bondForceWeight
       )
 
@@ -112,25 +115,31 @@ object DockMain {
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
+          case "-surface" => DockArgs.surface = args(i + 1).toDouble ; i += 2
           case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
-            if (balanceStrs.length != 3)
+            if (balanceStrs.length != 4)
               sys.error(usage)
 
             val atomicForceWeight = balanceStrs(0).toDouble
             val electricForceWeight = balanceStrs(1).toDouble
-            val bondForceWeight = balanceStrs(2).toDouble
-            val sum = atomicForceWeight + electricForceWeight + bondForceWeight
+            val hydrogenBondsForceWeight = balanceStrs(2).toDouble
+            val bondForceWeight = balanceStrs(3).toDouble
+            val sum = atomicForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight
 
-            if (atomicForceWeight < 0 || electricForceWeight < 0 || bondForceWeight < 0 || sum==0.0)
+            if (atomicForceWeight < 0 || electricForceWeight < 0 ||
+              hydrogenBondsForceWeight < 0 || bondForceWeight < 0 || sum==0.0)
               sys.error(usage)
 
-            DockArgs.atomicForceWeight = atomicForceWeight / sum
+            DockArgs.geometricForceWeight = atomicForceWeight / sum
             DockArgs.electricForceWeight = electricForceWeight / sum
+            DockArgs.hydrogenBondsForceWeight = hydrogenBondsForceWeight / sum
             DockArgs.bondForceWeight = bondForceWeight / sum
 
             i += 2
+
+          case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
 
           case _ => sys.error(usage)
         }
@@ -153,15 +162,20 @@ object DockMain {
     var consoleLog = false
 
     // Force vector docker specifics:
+    var surface = 1.4
     var ignoreAHydrogens = false
     var threshold = 1.0e-5
       // Force vector force balance: either all 3 set, or all 3 with default values
-    var atomicForceWeight = 1.0
-    var electricForceWeight = 1.0
-    var bondForceWeight = 1.0
+    var geometricForceWeight = 0.25
+    var electricForceWeight = 0.25
+    var hydrogenBondsForceWeight = 0.25
+    var bondForceWeight = 0.25
 
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
-      Math.abs(atomicForceWeight + electricForceWeight + bondForceWeight - 1.0) < 1.0e-5
+      Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&
+      geometricForceWeight >= 0 && electricForceWeight >= 0 && hydrogenBondsForceWeight >= 0 && bondForceWeight >= 0 &&
+      surface >= 0
+
   }
 
 }

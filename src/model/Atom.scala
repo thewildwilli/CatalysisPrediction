@@ -21,6 +21,7 @@ class Atom (val id: Int, elem: String, initX: Double, initY: Double, initZ: Doub
   def element = _element
   def setElement(e: String) = {_element = e; _radius = VanDerWaalsRadii(_element)}
   def isElement(e: String) = _element.toUpperCase == e.toUpperCase
+  def isOneOf(elems: String*) = elems.exists(e => isElement(e))
   def radius = _radius
 
   def x = coords(0)

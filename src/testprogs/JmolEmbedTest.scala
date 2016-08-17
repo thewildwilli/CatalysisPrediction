@@ -48,7 +48,7 @@ object JmolEmbedTest {
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = new PdbReader(args(1)).read
     val scorer: Scorer = new SurfaceDistanceScorer(1.4)
-    val docker: Docker = new ForceVectorDocker(1.4)
+    val docker: Docker = new ForceVectorDocker
 
     val chan = OneOne[Any]
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
