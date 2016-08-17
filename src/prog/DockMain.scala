@@ -16,7 +16,8 @@ object DockMain {
     "-out (B's output path, xyz format) " +
     "-docker (atompair|forcevector) [--consolelog] " +
     " [--ignorehydrogen] " +
-    " [surface s] " +
+    " [-surface s] " +
+    " [-permeability p}"
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
     " [-threshold t]"
 
@@ -78,6 +79,7 @@ object DockMain {
 
       case "forcevector" => new ForceVectorDocker(
         surface = DockArgs.surface,
+        permeability = DockArgs.permeability,
         maxDecelerations = 10,
         ignoreAHydrogens = DockArgs.ignoreAHydrogens,
         threshold = DockArgs.threshold,
@@ -116,6 +118,7 @@ object DockMain {
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
           case "-surface" => DockArgs.surface = args(i + 1).toDouble ; i += 2
+          case "-permeability" => DockArgs.permeability = args(i + 1).toDouble ; i += 2
           case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
@@ -163,6 +166,7 @@ object DockMain {
 
     // Force vector docker specifics:
     var surface = 1.4
+    var permeability = 0.5
     var ignoreAHydrogens = false
     var threshold = 1.0e-5
       // Force vector force balance: either all 3 set, or all 3 with default values
@@ -174,7 +178,8 @@ object DockMain {
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
       Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&
       geometricForceWeight >= 0 && electricForceWeight >= 0 && hydrogenBondsForceWeight >= 0 && bondForceWeight >= 0 &&
-      surface >= 0
+      surface >= 0 &&
+      permeability >= 0 && permeability <= 1
 
   }
 

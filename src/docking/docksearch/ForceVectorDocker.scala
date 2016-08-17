@@ -10,6 +10,7 @@ import model._
 import profiling.Profiler
 
 class ForceVectorDocker(val surface: Double = 1.4,
+                        val permeability: Double = 0.5,
                         val maxDecelerations: Int = 10,
                         val ignoreAHydrogens: Boolean = false,
                         val threshold: Double = 1.0e-5,
@@ -222,20 +223,25 @@ class ForceVectorDocker(val surface: Double = 1.4,
     val forces = for (atomB <- molB.surfaceAtoms) yield {
       var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
       for (atomA <- molA.surfaceAtoms(ignoreAHydrogens)) {
-        //val cover = if (approachPhase) maxCoverage else optimalDistance(atomA, atomB) * minCoverage;
         val cover = if (approachPhase)
           Math.max(forceShortestDistance * minCoverage, maxCoverage * softness)
         else
           optimalDistance(atomA, atomB) * minCoverage
 
         val actualDistance = atomA.distTo(atomB)
-        if (actualDistance <= cover /*&& inLineOfSight(atomA, atomB, molA, molB)*/) {
+        if (actualDistance <= cover) {
           forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
+
+
           forceLongestDistance = Math.max(forceLongestDistance, actualDistance)      // should be only if nonzero
           shortest = Math.min(forceShortestDistance, actualDistance)
           atomWithinMinCover |= actualDistance <= optimalDistance(atomA, atomB) * minCoverage;
         }
       }
+
+      for (atomA <- molA.innerAtoms(ignoreAHydrogens))
+        forceOnAtomB += (1-permeability) * getPenetrationPenaltyForce(atomA, atomB)
+
       (atomB, forceOnAtomB)
     }
 
@@ -303,9 +309,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
     // The root is 1, so normalize such that optimal distance --> 1
 
     val normalized = actualDistance/optimal
-    var force = explog(normalized / (softness * 3 + 1))
-    //if (force < 0)
-    //  force = force * 10
+    val force = explog(normalized / (softness * 3 + 1))
     force
   }
 
@@ -367,6 +371,20 @@ class ForceVectorDocker(val surface: Double = 1.4,
       0.0
   }
 
+  private def getPenetrationPenaltyForce(atomA: Atom, atomB: Atom) = {
+    val actualDistance = atomA.distTo(atomB)
+    val penalizationDistance = (atomA.radius + atomB.radius)
+    if ( (!atomA.isSurface || !atomB.isSurface) &&
+      !atomA.isElement("H") && !atomB.isElement("H") &&
+      actualDistance < penalizationDistance) {
+      val dif = atomA.coords - atomB.coords;                         // direction from b to a
+      val dir = dif / actualDistance;                                // normalized to length 1
+      val normalized = actualDistance/penalizationDistance
+      dir * Math.log(normalized)
+    } else
+      DenseVector(0.0, 0.0, 0.0)
+  }
+
   /* --- Scoring --- */
   /**
     * Molecules assumed to be nonempty!
@@ -421,7 +439,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
         totalElectricScore * electricForceWeight +
         totalHBondScore * hydrogenBondsForceWeight +
         totalBondStrengthScore * bondForceWeight
-    println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
+    //println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
     totalScore / (Math.min(aCount, bCount))
   }
 

@@ -12,9 +12,11 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   def this(l: Iterable[Atom]) { this(); for (a <- l) this.atomMap += (a.id -> a) }
 
   def apply(i: Int) = atomMap(i)
-  def atoms = atomMap.values
+  def atoms: Iterable[Atom] = atomMap.values
+  def atoms(ignoreHydrogen: Boolean) = atomMap.values.filter(a => !(ignoreHydrogen && a.isElement("H")))
   def surfaceAtoms: Iterable[Atom] = surfaceAtoms(false)
   def surfaceAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => a.isSurface && !(ignoreHydrogen && a.isElement("H")))
+  def innerAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => !a.isSurface && !(ignoreHydrogen && a.isElement("H")))
 
   def atomsBoundTo(a: Atom) = a.bonds.map(i => atomMap(i))
 
