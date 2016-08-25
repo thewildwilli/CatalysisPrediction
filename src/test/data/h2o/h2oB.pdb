@@ -1,0 +1,7 @@
+HETATM    4  O2    O     2      -9.186  -6.385   7.933
+HETATM    5 1H2    H     2      -9.655  -6.049   7.115
+HETATM    6 2H2    H     2      -8.241  -6.059   7.931
+CONECT    4    5    6
+CONECT    5    4
+CONECT    6    4
+END

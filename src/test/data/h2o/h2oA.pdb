@@ -1,0 +1,7 @@
+HETATM    1  O1    O     1     -10.483  -5.440  10.189
+HETATM    2 1H1    H     1     -10.473  -4.440  10.185
+HETATM    3 2H1    H     1     -10.015  -5.781   9.374
+CONECT    1    2    3
+CONECT    2    1
+CONECT    3    1
+sEND

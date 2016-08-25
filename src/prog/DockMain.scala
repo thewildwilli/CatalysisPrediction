@@ -14,12 +14,13 @@ object DockMain {
   val usage = "USAGE: scala DockMain -a (path to A, pdb format) " +
     "-b (path to B, pdb format) " +
     "-out (B's output path, xyz format) " +
-    "-docker (atompair|forcevector) [--consolelog] " +
+    "-docker (atompair|ehc|forcevector) [--consolelog] [--nogui] " +
+    " [-initangle a] [initlevel i]"
     " [--ignorehydrogen] " +
     " [-surface s] " +
     " [-permeability p]" +
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
-    " [-threshold t]"
+    " [-threshold t] "
 
   val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
@@ -35,8 +36,9 @@ object DockMain {
   def doMainDock(pathA: String, pathB: String, pathOut: String): Unit = {
     val startTime = System.currentTimeMillis()
 
-    jmolPanel.openAndColor((pathA, "gray"), (pathB, "red"))
+    jmolPanel.openFiles(List(pathA, pathB))
     jmolPanel.execSync(
+      selectModel("2.1"),
       setLog(0),
       zoom(50),
       save
@@ -48,30 +50,35 @@ object DockMain {
 
     val chan = OneOneBuf[Any](5)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
-    (proc { dockResult = docker.dock(molA, molB, chan); chan.close } ||
+    (proc { dockResult = docker.dock(molA, molB.clone, chan); chan.close } ||
       showActions(chan, jmolPanel))()
 
     val docked = dockResult._1
     val score = dockResult._2
 
     new Mol2Writer(pathOut).write(docked)      // write docked b to file
-    jmolPanel.openAndColor((pathA, "gray"), (pathOut, "red"))  // show original a and modified b
+    jmolPanel.openFiles(List(pathA, pathOut))  // show original a and modified b
     jmolPanel.execSeq(viewInitCmds)
 
-    println(s"Finished with score: $score, total time: ${System.currentTimeMillis()-startTime}ms")
+    val rmsd = molB.rmsd(docked)
+    println(s"Finished with RMSD: $rmsd, total time: ${System.currentTimeMillis()-startTime}ms, score: $score, ")
   }
 
   def showActions(chan: ?[Any], panel: JmolPanel) = proc {
     repeat {
-      val s = chan? match {
-        case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
-        case "save" => panel.exec(JmolCmds.save); "save"
-        case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(viewInitCmds); "reset"
-        case other => other.toString
+      val msg = chan?();
+      if (DockArgs.liveGui) {
+        val s = msg match
+        {
+          case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
+          case "save" => panel.exec(JmolCmds.save); "save"
+          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(viewInitCmds); "reset"
+          case other => other.toString
+        }
+        if (DockArgs.consoleLog)
+          println(s)
+        ()
       }
-      if (DockArgs.consoleLog)
-        println(s)
-      ()
     }
   }
 
@@ -79,8 +86,10 @@ object DockMain {
     * Gets an instance of a docker given the name. In the future, this could be
     * enhanced to use reflection.
     */
-  def getDocker = DockArgs.dockerName match {
-      case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
+  def getDocker = {
+    val innerDocker = DockArgs.dockerName match {
+      case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(DockArgs.surface))
+      case "ehc" => new EhcDocker(new SurfaceDistanceScorer(DockArgs.surface))
 
       case "forcevector" => new ForceVectorDocker(
         surface = DockArgs.surface,
@@ -108,6 +117,8 @@ object DockMain {
 
       case _ => sys.error(usage)
     }
+    new MultipleInitialsDocker(innerDocker, DockArgs.initAngle, DockArgs.initConfigLevel)
+  }
 
   /**
     * Gets a list of commands from file viewinit.txt.
@@ -137,6 +148,7 @@ object DockMain {
           case "-surface" => DockArgs.surface = args(i + 1).toDouble ; i += 2
           case "-permeability" => DockArgs.permeability = args(i + 1).toDouble ; i += 2
           case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
+          case "--nogui" => DockArgs.liveGui = false; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 4)
@@ -160,6 +172,8 @@ object DockMain {
             i += 2
 
           case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
+          case "-initangle" => DockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
+          case "-initlevel" => DockArgs.initConfigLevel = args(i + 1).toInt; i += 2
 
           case _ => sys.error(usage)
         }
@@ -180,6 +194,9 @@ object DockMain {
     var dockerName = ""
     var scorerName = ""
     var consoleLog = false
+    var liveGui = true
+    var initAngle = Math.toRadians(90)
+    var initConfigLevel = 0
 
     // Force vector docker specifics:
     var surface = 1.4

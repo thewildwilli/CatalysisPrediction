@@ -39,14 +39,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
   def rotateX(centre: DenseVector[Double], angRad: Double) = {
-    // Translate the centre to the origin, perform rotation around the origin, then translate back
-    translate(centre * -1.0)
-    transform (DenseMatrix(
-      (1.0, 0.0,                0.0),
-      (0.0, Math.cos(angRad), -Math.sin(angRad)),
-      (0.0, Math.sin(angRad), Math.cos(angRad))))
-    translate(centre)
-    this
+    rotate(centre, centre + DenseVector(1.0, 0.0, 0.0), angRad); this
   }
 
   /** Rotates the molecule with respect to Y axis around a centre, angle in radians.
@@ -54,13 +47,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
   def rotateY(centre: DenseVector[Double], angRad: Double) = {
-    translate(centre * -1.0)
-    transform (DenseMatrix(
-      (Math.cos(angRad) , 0.0, Math.sin(angRad)),
-      (0.0              , 1.0, 0.0),
-      (-Math.sin(angRad), 0.0, Math.cos(angRad))))
-    translate(centre)
-    this
+    rotate(centre, centre + DenseVector(0.0, 1.0, 0.0), angRad); this
   }
 
   /** Rotates the molecule with respect to Z axis around a centre, angle in radians.
@@ -68,13 +55,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     * See https://en.wikipedia.org/wiki/Rotation_matrix
     */
   def rotateZ(centre: DenseVector[Double], angRad: Double) = {
-    translate(centre * -1.0)
-    transform (DenseMatrix(
-      (Math.cos(angRad) , -Math.sin(angRad), 0.0),
-      (Math.sin(angRad) , Math.cos(angRad) , 0.0),
-      (0.0              , 0.0              , 1.0)))
-    translate(centre)
-    this
+    rotate(centre, centre + DenseVector(0.0, 0.0, 1.0), angRad); this
   }
 
   def transform(m: DenseMatrix[Double]) = {
@@ -100,15 +81,23 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     _radius.get
   }
 
-  /* This is now taken from JMOL
-  def computeSurfaceAtoms() = {
-    for (a <- Atoms) {
-      val pointsInSurface = Geometry.sphereOrientations(a.radius, Math.toRadians(45))
-      a.isSurface = pointsInSurface.exists(point =>
-        !Atoms.exists(other => (other ne a) && other.distTo(point) < other.radius) )
-    }
+  /**
+    * Computes Root-mean-square deviation with respect to another molecule.
+    * All atoms are taken into account.
+    * https://en.wikipedia.org/wiki/Root-mean-square_deviation_of_atomic_positions
+    */
+  def rmsd(other: Molecule) = {
+    val n = this.atoms.size
+    if (n != other.atoms.size)
+      throw new Exception("Cannot compute RMSD of molecules of different sizes")
+    val squaresum = (for (i <- this.atomMap.keys) yield {
+      val a = this(i)
+      val b = other(i)
+      Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2) + Math.pow(a.z-b.z, 2)
+    }).sum
+    Math.sqrt(squaresum / n)
+  }
 
-  }*/
 
   def computeSurfaceAtoms2D() = {
     for (a <- atoms) {
@@ -142,5 +131,15 @@ class Molecule(var atomMap: Map[Int, Atom]) {
 
   def JAtoms = atomMap.asJava
 
+
+  /* This is now taken from JMOL
+def computeSurfaceAtoms() = {
+  for (a <- Atoms) {
+    val pointsInSurface = Geometry.sphereOrientations(a.radius, Math.toRadians(45))
+    a.isSurface = pointsInSurface.exists(point =>
+      !Atoms.exists(other => (other ne a) && other.distTo(point) < other.radius) )
+  }
+
+}*/
 
 }

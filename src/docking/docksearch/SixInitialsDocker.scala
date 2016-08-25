@@ -39,12 +39,14 @@ class SixInitialsDocker(val scorer: Scorer) extends Docker {
       initials.append(i.clone.rotateZ(c, ang)); initials.append(i.clone.rotateZ(c, 2*ang)); initials.append(i.clone.rotateZ(c, 3*ang))
     }
 
-    val best = initials.map(b => performDock(molA, b, scorer)).maxBy(scorer.score)
+    log!"save"
+
+    val best = initials.map(b => performDock(molA, b, scorer, log)).maxBy(scorer.score)
     (best.b, scorer.score(best))
   }
 
-  private def performDock(molA: Molecule, molB: Molecule, scorer: Scorer): DockingState = {
-    print("performDock...")
+  private def performDock(molA: Molecule, molB: Molecule, scorer: Scorer, log: ![Any]): DockingState = {
+    log!"reset"
 
     var deltaAngle = InitialDeltaAngle
     var deltaSpace = InitialDeltaSpace
@@ -54,12 +56,12 @@ class SixInitialsDocker(val scorer: Scorer) extends Docker {
     EnhHillClimbing.optimize[DockingState](new DockingState(molA, molB), (s) => {
       val centre = s.b.getGeometricCentre
       List(
-        new Rotate(centre, DenseVector(1.0, 0, 0, 1),  deltaAngle),   // forward rotation on X axis
-        new Rotate(centre, DenseVector(1.0, 0, 0, 1), -deltaAngle),   // backward rotation on X axis
-        new Rotate(centre, DenseVector(0.0, 1, 0, 1),  deltaAngle),   // forward rotation on Y axis
-        new Rotate(centre, DenseVector(0.0, 1, 0, 1), -deltaAngle),   // backward rotation on Y axis
-        new Rotate(centre, DenseVector(0.0, 0, 1, 1),  deltaAngle),   // forward rotation on Z axis
-        new Rotate(centre, DenseVector(0.0, 0, 1, 1), -deltaAngle),    // backward rotation on Z axis
+        new Rotate(centre, DenseVector(1.0, 0, 0),  deltaAngle),   // forward rotation on X axis
+        new Rotate(centre, DenseVector(1.0, 0, 0), -deltaAngle),   // backward rotation on X axis
+        new Rotate(centre, DenseVector(0.0, 1, 0),  deltaAngle),   // forward rotation on Y axis
+        new Rotate(centre, DenseVector(0.0, 1, 0), -deltaAngle),   // backward rotation on Y axis
+        new Rotate(centre, DenseVector(0.0, 0, 1),  deltaAngle),   // forward rotation on Z axis
+        new Rotate(centre, DenseVector(0.0, 0, 1), -deltaAngle),    // backward rotation on Z axis
 
         new Translate(DenseVector(deltaSpace, 0.0, 0.0)),                  // forward translation on X axis
         new Translate(DenseVector(-deltaSpace, 0.0, 0.0)),                 // backward translation on X axis
@@ -71,7 +73,7 @@ class SixInitialsDocker(val scorer: Scorer) extends Docker {
     }, DockingState.transition, () => {
       deltaAngle = deltaAngle / 2.0
       deltaSpace = deltaSpace / 2.0
-    }, scorer.score, 50, null)
+    }, scorer.score, 50, log)
   }
 
 }

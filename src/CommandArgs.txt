@@ -22,6 +22,11 @@ EXPERIMENTS
 
     -- H2O experiments --
 
-        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 3,2,0,0
+        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,4,1,0 --nogui
+        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui
+
+    -- Complementary DNA nucleotides --
+        -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0
+        -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui
 
 

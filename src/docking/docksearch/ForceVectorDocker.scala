@@ -48,42 +48,10 @@ class ForceVectorDocker(val surface: Double = 1.4,
   var shortestDistance = Double.NegativeInfinity
   var forceShortestDistance = Double.PositiveInfinity
 
-  override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
-    println(getScore(molA, molB, true))
-    // First, make sure both molecules are centered -> move B into the centre of A
-    val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
-    log!new Translate(centreVect)
-    molB.translate(centreVect)
-
-    molB.rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
-    log!new Rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
-
-    //molB.rotate(molB.getGeometricCentre, DenseVector(1.0, 0.0, 0.0), Math.toRadians(180))
-    //log!new Rotate(molB.getGeometricCentre, DenseVector(1.0, 0.0, 0.0), Math.toRadians(180))
-
-    log!"save"
-
-    val radius = molA.getRadius + molB.getRadius
-    val initialConfigs = Geometry.sphereOrientations(radius, Math.toRadians(90))
-
-    avgBondEnergy =
-      (for (a <- molA.atoms; b <- molB.atoms) yield BondEnergy(a.element, b.element)).sum /
-        (molA.atoms.size * molB.atoms.size)
-
-    val result =
-    initialConfigs.map(pos => {
-      Profiler.time("dock") {  dockFromPos(molA, molB, pos, log) }
-    }).maxBy(p => p._2)
-
-    Profiler.report
-    result
-  }
-
   /**  Docks b into a from b's initial position and orientation, using force vectors.
     *   Try to minimize score
     */
-  private def dockFromPos(molA: Molecule, b: Molecule,
-                           pos: DenseVector[Double], log: ![Any]) = {
+  override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     maxAngle = initialDeltaAngle
     maxTranslate = initialDeltaSpace
     currWindowScore = 0.0
@@ -98,15 +66,19 @@ class ForceVectorDocker(val surface: Double = 1.4,
     atomWithinMinCover = false
     shortestDistance = Double.NegativeInfinity
     forceShortestDistance = Double.PositiveInfinity
+    avgBondEnergy =
+      (for (a <- molA.atoms; b <- molB.atoms) yield BondEnergy(a.element, b.element)).sum /
+        (molA.atoms.size * molB.atoms.size)
+
+    molB.rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
+    log!new Rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
+
 
     println(s"Docking from pos $startingPos")
     startingPos+=1
 
     // move the molecule to the starting position
-    val molB = b.clone
-    log!"reset"
-    molB.translate(pos)
-    log!new Translate(pos)
+
 
     var i = 1
     while (!done){
@@ -167,7 +139,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
           maxTranslate = initialDeltaSpace
         }
       }
-      println(s"$i, score: $currWindowScore, soft: $softness, decel $decelerations, approach: $approachPhase, maxT: $maxTranslate")
+      //println(s"$i, score: $currWindowScore, soft: $softness, decel $decelerations, approach: $approachPhase, maxT: $maxTranslate")
       lastWindowScore = currWindowScore
       bestWindowScore = Math.max(bestWindowScore, currWindowScore)
       currWindowScore = 0

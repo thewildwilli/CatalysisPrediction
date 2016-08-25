@@ -18,7 +18,7 @@ object H20IceTest {
     DockMain.parseArgs(args)
     var pathA = DockMain.DockArgs.pathA
     val pathB = DockMain.DockArgs.pathB
-    for (i <- 1 until 10){
+    for (i <- 1 until 100){
       DockMain.doMainDock(pathA, pathB, DockMain.DockArgs.pathOut)
 
       // Only B is written to pathOut, combine them:
