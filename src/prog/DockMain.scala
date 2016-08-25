@@ -17,7 +17,7 @@ object DockMain {
     "-docker (atompair|forcevector) [--consolelog] " +
     " [--ignorehydrogen] " +
     " [-surface s] " +
-    " [-permeability p}"
+    " [-permeability p]" +
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
     " [-threshold t]"
 
@@ -27,10 +27,15 @@ object DockMain {
   val viewInitCmds = getViewInitCmds
 
   def main(args: Array[String]): Unit = {
-    val startTime = System.currentTimeMillis()
     parseArgs(args)
+    doMainDock(DockArgs.pathA, DockArgs.pathB, DockArgs.pathOut)
+  }
 
-    jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathB, "red"))
+
+  def doMainDock(pathA: String, pathB: String, pathOut: String): Unit = {
+    val startTime = System.currentTimeMillis()
+
+    jmolPanel.openAndColor((pathA, "gray"), (pathB, "red"))
     jmolPanel.execSync(
       setLog(0),
       zoom(50),
@@ -49,8 +54,8 @@ object DockMain {
     val docked = dockResult._1
     val score = dockResult._2
 
-    new Mol2Writer(DockArgs.pathOut).write(docked)      // write docked b to file
-    jmolPanel.openAndColor((DockArgs.pathA, "gray"), (DockArgs.pathOut, "red"))  // show original a and modified b
+    new Mol2Writer(pathOut).write(docked)      // write docked b to file
+    jmolPanel.openAndColor((pathA, "gray"), (pathOut, "red"))  // show original a and modified b
     jmolPanel.execSeq(viewInitCmds)
 
     println(s"Finished with score: $score, total time: ${System.currentTimeMillis()-startTime}ms")
@@ -78,6 +83,18 @@ object DockMain {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(1.4))
 
       case "forcevector" => new ForceVectorDocker(
+        surface = DockArgs.surface,
+        permeability = DockArgs.permeability,
+        maxDecelerations = 10,
+        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
+        threshold = DockArgs.threshold,
+        geometricForceWeight = DockArgs.geometricForceWeight,
+        electricForceWeight = DockArgs.electricForceWeight,
+        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
+        bondForceWeight = DockArgs.bondForceWeight
+      )
+
+      case "forcevectorc" => new ForceVectorConcurrentDockerDocker(
         surface = DockArgs.surface,
         permeability = DockArgs.permeability,
         maxDecelerations = 10,

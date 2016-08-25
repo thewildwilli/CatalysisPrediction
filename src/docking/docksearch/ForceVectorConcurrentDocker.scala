@@ -9,7 +9,8 @@ import io.threadcso._
 import model._
 import profiling.Profiler
 
-class ForceVectorDocker(val surface: Double = 1.4,
+class ForceVectorConcurrentDockerDocker(
+                        val surface: Double = 1.4,
                         val permeability: Double = 0.5,
                         val maxDecelerations: Int = 10,
                         val ignoreAHydrogens: Boolean = false,
@@ -19,34 +20,36 @@ class ForceVectorDocker(val surface: Double = 1.4,
                         val hydrogenBondsForceWeight: Double = .25,
                         val bondForceWeight: Double = .25) extends Docker {
 
+  val workers = 1
+
   val hBondDistance = 1.8
 
   val initialDeltaAngle = Math.toRadians(5)
   val initialDeltaSpace = 0.5
   val minDeltaSpace = 1.0           // minimum to be used only when the molecules are too far apart
   val minCoverage = 1.25            // how many times the optimal distance must always be considered, at least
-  var maxCoverage = Double.PositiveInfinity
-  var atomWithinMinCover = false
+  @volatile var maxCoverage = Double.PositiveInfinity
+  @volatile var atomWithinMinCover = false
 
   var avgBondEnergy = 0.0
   var startingPos = 0
-  var softness = 1.0
+  @volatile var softness = 1.0
 
   var maxAngle = initialDeltaAngle
   var maxTranslate = initialDeltaSpace
 
-  var currWindowScore = Double.NegativeInfinity
-  var lastWindowScore = Double.NegativeInfinity
-  var bestWindowScore = Double.NegativeInfinity
+  var currScore = Double.NegativeInfinity
+  var lastScore = Double.NegativeInfinity
+  var bestScore = Double.NegativeInfinity
   var currIterScore = 0.0
   var lastIterScore = Double.NegativeInfinity
 
   var done = false
   var decelerations = 0
   val window = 5                  // Assess score every window iterations
-  var approachPhase = true
-  var shortestDistance = Double.NegativeInfinity
-  var forceShortestDistance = Double.PositiveInfinity
+  @volatile var approachPhase = true
+  @volatile var forceLongestDistance = Double.NegativeInfinity
+  @volatile var forceShortestDistance = Double.PositiveInfinity
 
   override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     println(getScore(molA, molB, true))
@@ -71,9 +74,9 @@ class ForceVectorDocker(val surface: Double = 1.4,
         (molA.atoms.size * molB.atoms.size)
 
     val result =
-    initialConfigs.map(pos => {
-      Profiler.time("dock") {  dockFromPos(molA, molB, pos, log) }
-    }).maxBy(p => p._2)
+      initialConfigs.map(pos => {
+        Profiler.time("dock") {  dockFromPos(molA, molB, pos, log) }
+      }).maxBy(p => p._2)
 
     Profiler.report
     result
@@ -83,20 +86,21 @@ class ForceVectorDocker(val surface: Double = 1.4,
     *   Try to minimize score
     */
   private def dockFromPos(molA: Molecule, b: Molecule,
-                           pos: DenseVector[Double], log: ![Any]) = {
+                          pos: DenseVector[Double], log: ![Any]) = {
     maxAngle = initialDeltaAngle
     maxTranslate = initialDeltaSpace
-    currWindowScore = 0.0
-    lastWindowScore = Double.NegativeInfinity
-    bestWindowScore = Double.NegativeInfinity
+    currScore = 0.0
+    lastScore = Double.NegativeInfinity
+    bestScore = Double.NegativeInfinity
     currIterScore = 0.0
     lastIterScore = Double.NegativeInfinity
     done = false
     decelerations = 0
     softness = 1.0
     approachPhase = true
+    maxCoverage = Double.PositiveInfinity
     atomWithinMinCover = false
-    shortestDistance = Double.NegativeInfinity
+    forceLongestDistance = Double.NegativeInfinity
     forceShortestDistance = Double.PositiveInfinity
 
     println(s"Docking from pos $startingPos")
@@ -122,8 +126,6 @@ class ForceVectorDocker(val surface: Double = 1.4,
 
       Profiler.time("updateState") {   updateState(i, molA, molB)       }  // updates done and all other algorithm control variables
       i+=1
-
-      //println(s"$currIterScore")
     }
     (molB, currIterScore)
   }
@@ -138,10 +140,10 @@ class ForceVectorDocker(val surface: Double = 1.4,
       softness = softness * 0.5
     }
 
-    currWindowScore += currIterScore
+    currScore += currIterScore
     if (i % window == 0) {
 
-      if (currWindowScore - lastWindowScore < threshold) {
+      if (currScore - lastScore < threshold) {
         if (decelerations >= maxDecelerations  && !approachPhase) {
           done = true
         } else {
@@ -154,23 +156,23 @@ class ForceVectorDocker(val surface: Double = 1.4,
           if (approachPhase && softness <= 0 && atomWithinMinCover){
             // end approach phase
             approachPhase = false
-            currWindowScore = 0.0
-            bestWindowScore = Double.NegativeInfinity
+            currScore = 0.0
+            bestScore = Double.NegativeInfinity
             decelerations = 0
             currIterScore = 0
           }
         }
-      } else if (currWindowScore > bestWindowScore + threshold) {
+      } else if (currScore > bestScore + threshold) {
         decelerations = 0
         if (approachPhase) {
           maxAngle = initialDeltaAngle
           maxTranslate = initialDeltaSpace
         }
       }
-      println(s"$i, score: $currWindowScore, soft: $softness, decel $decelerations, approach: $approachPhase, maxT: $maxTranslate")
-      lastWindowScore = currWindowScore
-      bestWindowScore = Math.max(bestWindowScore, currWindowScore)
-      currWindowScore = 0
+      println(s"$i, score: $currScore, soft: $softness, decel $decelerations, approach: $approachPhase, maxT: $maxTranslate, maxC: $maxCoverage")
+      lastScore = currScore
+      bestScore = Math.max(bestScore, currScore)
+      currScore = 0
     }
 
   }
@@ -181,7 +183,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
     */
   private def getTranslation(forces: Iterable[(Atom, DenseVector[Double])]) = {
     val forcesOnly = forces.map(pair => pair._2)
-    val netForce = forcesOnly.foldLeft(DenseVector(0.0, 0.0, 0.0))((a, b) => a + b)
+    val netForce = forcesOnly.reduce((a, b) => a + b)
     val totalForceAmount = forcesOnly.map(f => norm(f)).sum
     val minApplied = (totalForceAmount < minDeltaSpace) && approachPhase
     val translateDistance =
@@ -189,11 +191,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
         minDeltaSpace
       else
         Math.min(norm(netForce), maxTranslate)
-    val translation =
-      if ( norm(netForce) > 0)
-        (netForce * translateDistance) / norm(netForce)
-      else
-        DenseVector(0.0, 0.0, 0.0)
+    val translation = (netForce * translateDistance) / norm(netForce)
     (translation, minApplied)
   }
 
@@ -203,9 +201,9 @@ class ForceVectorDocker(val surface: Double = 1.4,
       val r = atomB.coords - centre // radius vector from centre to atom
       linalg.cross(r, force)
     }
-    val netTorque = torques.foldLeft(DenseVector(0.0, 0.0, 0.0))((a, b) => a + b)     // add all torques together
+    val netTorque = torques.reduce((a, b) => a + b)     // add all torques together
     val netTorqueNorm = norm(netTorque)
-    val axis = if (netTorqueNorm > 0) netTorque / netTorqueNorm else DenseVector(0.0, 0.0, 0.0)
+    val axis = netTorque / netTorqueNorm // normalize
 
     // calculate moment of inertia with all atoms assumed weight 0.1 otherwise angles are too small:
     var moi = 0.0
@@ -214,7 +212,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
       moi += 0.1 * distToAxis*distToAxis
     }
 
-    val angle = if (netTorqueNorm > 0) Math.min(netTorqueNorm / moi, maxAngle) else 0.0
+    val angle = Math.min(netTorqueNorm / moi, maxAngle)
     //println(Math.toDegrees(angle))
     (axis, angle)
   }
@@ -222,23 +220,80 @@ class ForceVectorDocker(val surface: Double = 1.4,
   /** Returns a list of pairs (Atom, DenseVector) containing the net force for
     * each atom in molB.     */
   private def getForces(molA: Molecule, molB: Molecule) = {
-    val forces = for (atomB <- molB.surfaceAtoms) yield {
-      var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
-      for (atomA <- molA.surfaceAtoms(ignoreAHydrogens)) {
-        val actualDistance = atomA.distTo(atomB)
-        if (approachPhase || actualDistance <= optimalDistance(atomA, atomB) * minCoverage) {
-          forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
-          atomWithinMinCover |= actualDistance <= optimalDistance(atomA, atomB) * minCoverage;
-        }
-      }
+    forceLongestDistance = Double.NegativeInfinity
+    @volatile var shortest = Double.PositiveInfinity
 
-      for (atomA <- molA.innerAtoms(ignoreAHydrogens))
-        forceOnAtomB += (1-permeability) * getPenetrationPenaltyForce(atomA, atomB)
+    val forces = for (atomB <- molB.surfaceAtoms) yield {
+      /*var geometricForceOnB = DenseVector(0.0, 0.0, 0.0)
+      var electricForceOnB = DenseVector(0.0, 0.0, 0.0)
+      var hBondForceOnB = DenseVector(0.0, 0.0, 0.0)
+      var bondStrengthForceOnB = DenseVector(0.0, 0.0, 0.0)
+      var penetrationPenalty = DenseVector(0.0, 0.0, 0.0)*/
+      @volatile var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
+
+      val toW = N2N[(Atom, Atom)](1, workers, "tasks to workers")
+      val fromW = N2N[DenseVector[Double]](workers, 1, "results from workers")
+      val workerProcs = || (for (w <- 0 until workers) yield worker(molA, molB, toW, fromW))
+      (workerProcs ||
+        proc { shortest = Math.min(forceShortestDistance, pushTasks(atomB, molA, toW)) } ||
+        proc { forceOnAtomB = collectResults(fromW) } )()        // run concurrently
 
       (atomB, forceOnAtomB)
     }
 
+    forceShortestDistance = shortest
+    maxCoverage = forceLongestDistance + maxTranslate
     forces.filter(t => norm(t._2) > 0)
+  }
+
+  def pushTasks(atomB: Atom, molA: Molecule, out: ![(Atom, Atom)]) = {
+    var shortest = Double.PositiveInfinity
+    for (atomA <- molA.atoms(ignoreAHydrogens)) {
+      if (atomA.isSurface) {
+        val cover = if (approachPhase)
+          Math.max(forceShortestDistance * minCoverage, maxCoverage * softness)
+        else
+          optimalDistance(atomA, atomB) * minCoverage
+
+        val actualDistance = atomA.distTo(atomB)
+        if (actualDistance <= cover) {
+          out!(atomA, atomB)
+          //forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
+
+          forceLongestDistance = Math.max(forceLongestDistance, actualDistance) // should be only if nonzero
+          shortest = Math.min(shortest, actualDistance)
+          atomWithinMinCover |= actualDistance <= optimalDistance(atomA, atomB) * minCoverage;
+        }
+      } else
+        out!(atomA, atomB)
+    }
+    out.closeOut
+    shortest
+  }
+
+  def worker(molA: Molecule, molB: Molecule,
+             in: ?[(Atom, Atom)], out: ![DenseVector[Double]]) = proc {
+    repeat {
+      val (a, b) = in.?()
+      if (a.isSurface)
+        out ! atomToAtomForce(a, b, molA, molB)
+      else
+        out ! getPenetrationPenaltyForce(a, b)
+    }
+    in.closeIn
+    out.closeOut
+  }
+
+  def collectResults(in: ?[DenseVector[Double]]) = {
+    var i = 0
+    var force = DenseVector(0.0, 0.0, 0.0);
+    repeat {
+      force = force + in.?()
+      i+=1
+    }
+    in.closeIn
+    //println(s"got $i with norm ${norm(force)}")
+    force
   }
 
   private def inLineOfSight(atomA: Atom, atomB: Atom, molA: Molecule, molB: Molecule) = {
@@ -253,13 +308,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
     )
   }
 
-  /** Calculates the total force that molA exerts on atomB: the sum
-    * of the forces each atom in a exerts on atomB   */
-  private def molToAtomForce(molA: Molecule, atomB: Atom, molB: Molecule) = {
-    molA.surfaceAtoms(ignoreAHydrogens)
-      .map(atomA => atomToAtomForce(atomA, atomB, molA, molB))
-      .reduce((a,b) => a+b)
-  }
+
 
   /** calculates the force that atomA exerts on atomB
     * This force has 2 components:
@@ -271,7 +320,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
     *     Different forces attract if the distance is farther than the optimal distance.
     * */
   private def atomToAtomForce(atomA: Atom, atomB: Atom,
-                              molA: Molecule, molB: Molecule): DenseVector[Double] = {
+                              molA: Molecule, molB: Molecule)= {
     val dif = atomA.coords - atomB.coords;                    // direction from b to a
     val actualDistance = norm(dif)
     val dir = dif / actualDistance;                                // normalized to length 1
@@ -310,18 +359,17 @@ class ForceVectorDocker(val surface: Double = 1.4,
   private def getElectricForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double,
                                    optimal: Double) = {
     val chargeProduct = atomA.partialCharge*atomB.partialCharge
-    //-chargeProduct / (actualDistance*actualDistance) // Coulomb
 
-     if (chargeProduct < 0)
-       - explog(actualDistance / optimal) * chargeProduct
-     else if (chargeProduct > 0)
-       minusExpOverX(actualDistance / optimal) * chargeProduct
-     else
+    if (chargeProduct < 0)
+      - explog(actualDistance / optimal) * chargeProduct
+    else if (chargeProduct > 0)
+      minusExpOverX(actualDistance / optimal) * chargeProduct
+    else
       0.0
   }
 
   private def getHydrogenBondsForce(atomA: Atom, atomB: Atom, molA: Molecule,
-                                   molB: Molecule, actualDistance: Double) = {
+                                    molB: Molecule, actualDistance: Double) = {
 
     def getForce(vectToHBondSpot: DenseVector[Double]) =
       if (vectToHBondSpot != null) {
@@ -377,7 +425,8 @@ class ForceVectorDocker(val surface: Double = 1.4,
       val dif = atomA.coords - atomB.coords;                         // direction from b to a
       val dir = dif / actualDistance;                                // normalized to length 1
       val normalized = actualDistance/penalizationDistance
-      dir * Math.log(normalized)
+      val force = dir * Math.log(normalized)
+      (1 - permeability) * force
     } else
       DenseVector(0.0, 0.0, 0.0)
   }
@@ -409,16 +458,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
           if (!a.isElement("H") && !b.isElement("H"))
             totalGeometricScore += explog2(n * explog2.maxX) / explog2.maxY
 
-          //TODO: I changed something here..
-          val chargeProduct = a.partialCharge*b.partialCharge
-          totalElectricScore += (
-            if (chargeProduct < 0)
-              (explog2(n * explog2.maxX) / explog2.maxY) * a.partialCharge * b.partialCharge * -1.0
-            else if (chargeProduct > 0 && n <= 2)
-              minusExpOverX(n) * chargeProduct
-            else
-              0.0
-            )
+          totalElectricScore += (explog2(n * explog2.maxX) / explog2.maxY) * a.partialCharge * b.partialCharge * -1.0
 
           def hScore(vectToSpot: DenseVector[Double]) = {
             if (vectToSpot != null)
@@ -451,9 +491,6 @@ class ForceVectorDocker(val surface: Double = 1.4,
   }
 
 
-
-
-
   /* --- Distance Functions --- */
 
   private def optimalDistance(a: Atom, b: Atom) = {
@@ -461,7 +498,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
       hBondDistance + 2 * surface
     else
       (a.radius + b.radius) * 0.9 + 2 * surface
-        //(if (a.isElement("H") || b.isElement("H")) 0.0 else 2 * surface)
+    //(if (a.isElement("H") || b.isElement("H")) 0.0 else 2 * surface)
   }
 
   private def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)

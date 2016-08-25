@@ -34,8 +34,8 @@ public class Mol2Writer implements MoleculeWriter {
                         a.x(), a.y(), a.z(),
                         a.element(),
 
-                        a.substructureId(),
-                        a.substructureName(),
+                        a.substructureId() != null && a.substructureId().length() > 0 ? a.substructureId() : "0",
+                        a.substructureName() != null && a.substructureName().length() > 0 ? a.substructureName() : "A",
 
                         a.partialCharge()
                 ));

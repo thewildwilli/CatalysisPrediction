@@ -42,10 +42,15 @@ object Geometry {
       crossprod * Math.sin(angRad)
 
     // Convert rotMatrix to a 4x4 matrix adding 0s and 1 in the diagonal:
-    DenseMatrix.horzcat(
+    val res = DenseMatrix.horzcat(
       DenseMatrix.vertcat(rotMatrix, DenseMatrix((0.0, 0.0, 0.0))),
       DenseMatrix(0.0, 0.0, 0.0, 1.0)
     )
+
+    if (axisNorm > 0)
+      res
+    else
+      DenseMatrix.eye[Double](4)
   }
 
   def compose(transforms: DenseMatrix[Double]*) = {

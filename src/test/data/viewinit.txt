@@ -1,10 +1,10 @@
 select model=1.1
-cartoon only
-#color atom partialCharge
+#cartoon only
+color atom partialCharge
 
 select model=2.1
 #cartoon only
-#color atom partialCharge
+color atom partialCharge
 
 model all
 background white
