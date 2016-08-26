@@ -14,8 +14,9 @@ object DockMain {
   val usage = "USAGE: scala DockMain -a (path to A, pdb format) " +
     "-b (path to B, pdb format) " +
     "-out (B's output path, xyz format) " +
+    " [-dir d] [--randominit] [-ref a,b,c,...]" +
     "-docker (atompair|ehc|forcevector) [--consolelog] [--nogui] " +
-    " [-initangle a] [initlevel i]"
+    " [-initangle a] [initlevel i]" +
     " [--ignorehydrogen] " +
     " [-surface s] " +
     " [-permeability p]" +
@@ -29,12 +30,17 @@ object DockMain {
 
   def main(args: Array[String]): Unit = {
     parseArgs(args)
-    doMainDock(DockArgs.pathA, DockArgs.pathB, DockArgs.pathOut)
+    val (docked, rmsd, _) = doMainDock(DockArgs.fullPathA, DockArgs.fullPathB, DockArgs.fullPathOut)
+
+    new Mol2Writer(DockArgs.fullPathOut).write(docked)      // write docked b to file
+    jmolPanel.openFiles(List(DockArgs.fullPathA, DockArgs.fullPathOut))  // show original a and modified b
+    jmolPanel.execSeq(viewInitCmds)
+    println(s"Finished with RMSD: $rmsd")
   }
 
 
-  def doMainDock(pathA: String, pathB: String, pathOut: String): Unit = {
-    val startTime = System.currentTimeMillis()
+  def doMainDock(pathA: String, pathB: String, pathOut: String) = {
+    //val startTime = System.currentTimeMillis()
 
     jmolPanel.openFiles(List(pathA, pathB))
     jmolPanel.execSync(
@@ -55,13 +61,7 @@ object DockMain {
 
     val docked = dockResult._1
     val score = dockResult._2
-
-    new Mol2Writer(pathOut).write(docked)      // write docked b to file
-    jmolPanel.openFiles(List(pathA, pathOut))  // show original a and modified b
-    jmolPanel.execSeq(viewInitCmds)
-
-    val rmsd = molB.rmsd(docked)
-    println(s"Finished with RMSD: $rmsd, total time: ${System.currentTimeMillis()-startTime}ms, score: $score, ")
+    (docked, getRMSD(docked, molB), score)
   }
 
   def showActions(chan: ?[Any], panel: JmolPanel) = proc {
@@ -81,6 +81,20 @@ object DockMain {
       }
     }
   }
+
+  def getRMSD(docked: Molecule, molB: Molecule) = {
+    if (DockArgs.fullPathsRef.isEmpty)
+      docked.rmsd(molB)
+    else {
+      jmolPanel.openFiles(DockArgs.fullPathsRef)
+      (for (i <- DockArgs.fullPathsRef.indices) yield {
+        val refMol = JmolMoleculeReader.read(jmolPanel, i)
+
+        docked.rmsd(refMol)
+      }).min
+    }
+  }
+
 
   /**
     * Gets an instance of a docker given the name. In the future, this could be
@@ -117,7 +131,7 @@ object DockMain {
 
       case _ => sys.error(usage)
     }
-    new MultipleInitialsDocker(innerDocker, DockArgs.initAngle, DockArgs.initConfigLevel)
+    new MultipleInitialsDocker(innerDocker, DockArgs.initAngle, DockArgs.initConfigLevel, DockArgs.randomInit)
   }
 
   /**
@@ -142,6 +156,10 @@ object DockMain {
           case "-a" => DockArgs.pathA = args(i + 1);i += 2
           case "-b" => DockArgs.pathB = args(i + 1);i += 2
           case "-out" => DockArgs.pathOut = args(i + 1); i += 2
+          case "-dir" => DockArgs.dir = args(i+1); i += 2
+          case "-ref" => DockArgs.pathRefs = args(i+1); i += 2
+          case "--randominit" => DockArgs.randomInit = true; i += 1
+
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
@@ -183,20 +201,22 @@ object DockMain {
 
     if (!DockArgs.valid)
       sys.error(usage)
-
-    print(DockArgs)
   }
 
   object DockArgs {
+    var dir = ""
     var pathA = ""
     var pathB = ""
     var pathOut = ""
+    var pathRefs = ""
+
     var dockerName = ""
     var scorerName = ""
     var consoleLog = false
     var liveGui = true
     var initAngle = Math.toRadians(90)
     var initConfigLevel = 0
+    var randomInit = false
 
     // Force vector docker specifics:
     var surface = 1.4
@@ -214,6 +234,15 @@ object DockMain {
       geometricForceWeight >= 0 && electricForceWeight >= 0 && hydrogenBondsForceWeight >= 0 && bondForceWeight >= 0 &&
       surface >= 0 &&
       permeability >= 0 && permeability <= 1
+
+    def fullPathA = dir + pathA
+    def fullPathB = dir + pathB
+    def fullPathOut = dir + pathOut
+    def fullPathsRef : Seq[String] =
+      if (pathRefs == "")
+        List[String]()
+      else
+        for (p <- pathRefs.split(",")) yield dir + p.trim
 
   }
 

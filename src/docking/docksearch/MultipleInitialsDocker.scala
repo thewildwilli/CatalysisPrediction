@@ -7,12 +7,15 @@ import io.threadcso.!
 import model.{Geometry, Molecule}
 import profiling.Profiler
 
+import scala.util.Random
+
 /**
   * @param initialConfigLevel: 0 => only translation, 1 => orientations in 2D, 2 => orientations in 3D.
   *                         For angle=90 degrees, 0 gives 6 initial configurations, 1 gives 36 and 2 gives 144.
  */
 class MultipleInitialsDocker(val docker: Docker, angRad: Double,
-                             initialConfigLevel: Integer) extends Docker {
+                             initialConfigLevel: Integer,
+                             randomInitial: Boolean) extends Docker {
 
   val xone = DenseVector(1.0, 0.0, 0.0)
 
@@ -20,12 +23,15 @@ class MultipleInitialsDocker(val docker: Docker, angRad: Double,
     val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
     log!new Translate(centreVect)
     molB.translate(centreVect)
+    if (randomInitial)
+      doRandomRotation(molB, log)
+
     log!"save"
 
     val radius = molA.getRadius + molB.getRadius
-    val best = forOrientations(molB, radius, log, bCopy =>
-      Profiler.time("dock") { docker.dock(molA, bCopy, log)}).maxBy(p => p._2)
-    Profiler.report
+    val best = forOrientations(molB, radius, log, bCopy => {
+      Profiler.time("dock") {  docker.dock(molA, bCopy, log) }
+    }).maxBy(p => p._2)
     best
   }
 
@@ -63,16 +69,10 @@ class MultipleInitialsDocker(val docker: Docker, angRad: Double,
     l
   }
 
-  private def dockFromPos(molA: Molecule, molB: Molecule, log: ![Any]) =
-    Profiler.time("dock") {  docker.dock(molA, molB, log) }
-    /*var l = List[A]()
-    val orientations = Geometry.sphereOrientations(1, angRad)
-    for (pos <- orientations) {
-      for (o <- orientations) {
-        for (secondAngle <- 0.0 until Math.toRadians(360) by angRad) {
-          l ::= cmd
-        }
-      }
-    }
-    l*/
+  private def doRandomRotation(m: Molecule, log: ![Any]): Unit = {
+    val axis = DenseVector(Random.nextDouble(), Random.nextDouble(), Random.nextDouble())
+    val angle = Random.nextDouble() * 2 * Math.PI
+    m.rotate(m.getGeometricCentre, axis, angle)
+    log! new Rotate(m.getGeometricCentre, axis, angle)
+  }
 }

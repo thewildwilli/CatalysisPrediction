@@ -1,0 +1,28 @@
+# --  TINY MOLECULES --
+
+#  -- H2O --
+
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,0,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,0,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,0,1 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,1,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,5,1,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit
+
+    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui --randominit
+    
+    
+#  -- Complementary single nucleotide -- 
+  
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,0,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,0,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,0,1  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,10,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0  --nogui --randominit
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,10,0  --nogui --randominit
+    
+    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui --randominit

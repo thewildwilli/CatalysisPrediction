@@ -18,15 +18,20 @@
 
 EXPERIMENTS
 
--- Small molecules --
+-- Tiny molecules --
 
     -- H2O experiments --
 
-        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,4,1,0 --nogui
-        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui
+        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-5 -balance 1,10,5,0 -ref h2o/h2oB.mol,h2o/h2oBAlt1.pdb,h2o/h2oBAlt2.pdb,h2o/h2oBAlt3.pdb  --nogui --randominit
+        -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui --randominit
 
     -- Complementary DNA nucleotides --
         -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0
         -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui
 
 
+-- Small molecule --
+
+    -- Complementary ssDNA --
+
+        -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0 --randominit

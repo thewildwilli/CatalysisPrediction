@@ -70,11 +70,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
       (for (a <- molA.atoms; b <- molB.atoms) yield BondEnergy(a.element, b.element)).sum /
         (molA.atoms.size * molB.atoms.size)
 
-    molB.rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
-    log!new Rotate(molB.getGeometricCentre, DenseVector(0.0, 1.0, 0.0), Math.toRadians(180))
-
-
-    println(s"Docking from pos $startingPos")
+    //println(s"Docking from pos $startingPos")
     startingPos+=1
 
     // move the molecule to the starting position
@@ -186,7 +182,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
       moi += 0.1 * distToAxis*distToAxis
     }
 
-    val angle = if (netTorqueNorm > 0) Math.min(netTorqueNorm / moi, maxAngle) else 0.0
+    val angle = if (moi > 0) Math.min(netTorqueNorm / moi, maxAngle) else 0.0
     //println(Math.toDegrees(angle))
     (axis, angle)
   }

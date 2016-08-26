@@ -1,5 +1,16 @@
 package profiling
 
+/*
+    NOTE
+
+    This file was authored by the Concurrent Algorithms
+    and Data Structures course team
+    (http://www.cs.ox.ac.uk/teaching/courses/2015-2016/cads/)
+    and I am using it here with the kind permission of Prof Gavin Lowe.
+
+    Only the parts expressly marked have been authored by myself (Ernesto Ocampo).
+*/
+
 
 /** An object providing thread identifiers.
   * Based on Herlihy & Shavit, Section A.2.4 */

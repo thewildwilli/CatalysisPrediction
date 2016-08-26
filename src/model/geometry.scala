@@ -27,6 +27,7 @@ object Geometry {
     */
   def rotate(axis: DenseVector[Double], angRad: Double) = {
     // Normalize the axis and add 1.0 at the end:
+    if (axis.length != 3) throw new Exception("Axis must be a 3-valued vector for rotation.")
     val axisNorm = norm(axis)
     val normAxis = DenseVector[Double](axis(0)/axisNorm, axis(1)/axisNorm, axis(2)/axisNorm, 1.0)
 
@@ -80,7 +81,7 @@ object Geometry {
       val rotateXZ = DenseVector[Double](radius * Math.cos(xzAngle), 0.0, radius * Math.sin(xzAngle), 1.0)
 
       // now get a perpendicular vector in the XZ plane (still a 2D operation):
-      val axis = DenseVector[Double](-rotateXZ(2), 0.0, rotateXZ(0), 1.0);
+      val axis = DenseVector[Double](-rotateXZ(2), 0.0, rotateXZ(0));
 
       // now rotate with respect to that axis, and discard the 4th element
       val rotated = rotate(axis, otherAngle) * rotateXZ

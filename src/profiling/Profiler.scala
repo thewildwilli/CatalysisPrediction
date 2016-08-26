@@ -1,5 +1,17 @@
 package profiling
 
+/*
+    NOTE
+
+    This file was authored by the Concurrent Algorithms
+    and Data Structures course team
+    (http://www.cs.ox.ac.uk/teaching/courses/2015-2016/cads/)
+    and I am using it here with the kind permission of Prof Gavin Lowe.
+
+    Only the parts expressly marked have been authored by myself (Ernesto Ocampo).
+*/
+
+
 /** Some profiling functions */
 import scala.collection.mutable.ArrayBuffer
 
@@ -110,7 +122,10 @@ object Profiler{
     myCounts(i) += 1
   }
 
-  /** Produce report of all timers and counters, and reset */
+  /** Produce report of all timers and counters, and reset
+    * Adapted by Ernesto Ocampo 25/8/2016: the function mergePairs was
+    * moved outside the report function to make it reusable
+    * */
   def report = synchronized{
     // (timer name, time) pairs
     val tPairs0 = 
@@ -120,14 +135,7 @@ object Profiler{
       for(w <- 0 until p; i <- 0 until cnames(w).length)
       yield (cnames(w)(i), counts(w)(i))
 
-    // Merge pairs with same name; pre: list is sorted. 
-    def mergePairs[A : Numeric](pairs: Seq[(String, A)]) : Seq[(String, A)] = 
-      if(pairs.isEmpty) pairs
-      else{
-	val (st,n) = pairs.head
-	val (matches, others) = pairs.span(_._1==st)
-	(st, matches.map(_._2).sum) +: mergePairs(others)
-      }
+
     val tPairs : Seq[(String,Long)] = mergePairs(tPairs0.sorted)
     val cPairs : Seq[(String,Int)] = mergePairs(cPairs0.sorted)
 
@@ -147,6 +155,26 @@ object Profiler{
       for((cn,c) <- cPairs) println(cn+": "+(" "*(maxW-cn.length))+c)
     }
     // Reset here?
+  }
+
+  // Merge pairs with same name; pre: list is sorted.
+  private def mergePairs[A : Numeric](pairs: Seq[(String, A)]) : Seq[(String, A)] =
+    if(pairs.isEmpty) pairs
+    else{
+      val (st,n) = pairs.head
+      val (matches, others) = pairs.span(_._1==st)
+      (st, matches.map(_._2).sum) +: mergePairs(others)
+    }
+
+
+  /** Method added by Ernesto Ocampo - 25/8/2018 based on code of report method.
+    * Allows accessing times without printing them.
+    * */
+  def getTimes = synchronized{
+    val tPairs0 =
+      (for(w <- 0 until p) yield tnames(w).zip(times(w))).flatten
+
+    mergePairs(tPairs0.sorted).toMap
   }
 
 }

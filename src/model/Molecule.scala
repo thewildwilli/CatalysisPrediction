@@ -88,11 +88,16 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     */
   def rmsd(other: Molecule) = {
     val n = this.atoms.size
-    if (n != other.atoms.size)
-      throw new Exception("Cannot compute RMSD of molecules of different sizes")
-    val squaresum = (for (i <- this.atomMap.keys) yield {
-      val a = this(i)
-      val b = other(i)
+    if (n != other.atoms.size) throw new Exception("Cannot compute RMSD of molecules of different sizes")
+    if (n == 0) throw new Exception ("Calculating RMSD of empty molecule")
+
+    // Atoms in the two molecules may have different ids, so they are accessed by index:
+    val myAtoms = this.atoms.toIndexedSeq
+    val otherAtoms = other.atoms.toIndexedSeq
+
+    val squaresum = (for (i <- myAtoms.indices) yield {
+      val a = myAtoms(i)
+      val b = otherAtoms(i)
       Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2) + Math.pow(a.z-b.z, 2)
     }).sum
     Math.sqrt(squaresum / n)
