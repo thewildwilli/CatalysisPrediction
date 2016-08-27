@@ -9,6 +9,7 @@ import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
 import model.Molecule
 import opt.Action
 import JmolCmds._
+import docking.docksearch.forcevector.ForceVectorDocker
 
 object JmolEmbedTest {
 

@@ -19,15 +19,17 @@ object Benchmarker {
       val cmd = line.trim
       if (!cmd.startsWith("#") && !cmd.isEmpty) {
         DockMain.parseArgs(cmd.split(" "))
+        print(s"Line $i: ")
         Profiler.clear
         var rmsdAvg = 0.0
         for (i <- 0 until repeats) {
           val (_, rmsd, _) = DockMain.doMainDock(DockArgs.fullPathA, DockArgs.fullPathB, DockArgs.fullPathOut)
+          print(".")
           rmsdAvg += rmsd
         }
         rmsdAvg = rmsdAvg / repeats
         val avgTime = Profiler.getTimes("dock").toDouble / repeats
-        println(s"Line $i: Average RMSD: $rmsdAvg, Average time: ${avgTime}ms. Line: $cmd")
+        println(s"Average time: ${avgTime}ms, Average RMSD: $rmsdAvg. Line: $cmd")
       }
       i += 1
     }

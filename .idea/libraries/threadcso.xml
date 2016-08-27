@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="threadcso-1.0R10">
+  <library name="threadcso">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/lib/threadcso-1.0R10.jar!/" />
     </CLASSES>

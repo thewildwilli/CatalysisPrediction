@@ -14,9 +14,9 @@ import scala.collection.mutable.ListBuffer
   *   Then uses hill climbing from each of these to find a solution.
   *   Hill climbing needs to both rotate and translate molecule B.
   */
-class EhcDocker(val scorer: Scorer) extends Docker {
+class EhcDocker(val scorer: Scorer, val maxIters: Int) extends Docker {
   var InitialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
-  var InitialDeltaSpace = 0.1
+  var InitialDeltaSpace = 1.0
 
   override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
     var deltaAngle = InitialDeltaAngle
@@ -45,7 +45,7 @@ class EhcDocker(val scorer: Scorer) extends Docker {
     }, DockingState.transition, () => {
       deltaAngle = deltaAngle / 2.0
       deltaSpace = deltaSpace / 2.0
-    }, scorer.score, 50, log)
+    }, scorer.score, maxIters, log)
     (finalState.b, scorer.score(finalState))
   }
 

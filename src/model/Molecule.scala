@@ -88,7 +88,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     */
   def rmsd(other: Molecule) = {
     val n = this.atoms.size
-    if (n != other.atoms.size) throw new Exception("Cannot compute RMSD of molecules of different sizes")
+    if (n != other.atoms.size) throw new Exception(s"Cannot compute RMSD of molecules of different sizes. I have ${this.atoms.size}, other has ${other.atoms.size}")
     if (n == 0) throw new Exception ("Calculating RMSD of empty molecule")
 
     // Atoms in the two molecules may have different ids, so they are accessed by index:

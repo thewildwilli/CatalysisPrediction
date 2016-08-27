@@ -2,12 +2,14 @@ package prog
 
 import docking.dockscore._
 import docking.docksearch._
+import docking.docksearch.forcevector.{ForceVectorDocker, ForceVectorScore}
 import io.Mol2Writer
 import io.threadcso._
 import jmolint.JmolCmds._
 import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
 import model.Molecule
 import opt.Action
+import profiling.Profiler
 
 
 object DockMain {
@@ -17,6 +19,7 @@ object DockMain {
     " [-dir d] [--randominit] [-ref a,b,c,...]" +
     "-docker (atompair|ehc|forcevector) [--consolelog] [--nogui] " +
     " [-initangle a] [initlevel i]" +
+    " [-maxiters m]" +
     " [--ignorehydrogen] " +
     " [-surface s] " +
     " [-permeability p]" +
@@ -36,6 +39,7 @@ object DockMain {
     jmolPanel.openFiles(List(DockArgs.fullPathA, DockArgs.fullPathOut))  // show original a and modified b
     jmolPanel.execSeq(viewInitCmds)
     println(s"Finished with RMSD: $rmsd")
+    Profiler.report
   }
 
 
@@ -52,6 +56,7 @@ object DockMain {
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
+//    println(s"Pairs: ${molA.atoms(DockArgs.ignoreAHydrogens).size * molB.surfaceAtoms.size}")
     val docker = getDocker
 
     val chan = OneOneBuf[Any](5)
@@ -89,7 +94,6 @@ object DockMain {
       jmolPanel.openFiles(DockArgs.fullPathsRef)
       (for (i <- DockArgs.fullPathsRef.indices) yield {
         val refMol = JmolMoleculeReader.read(jmolPanel, i)
-
         docked.rmsd(refMol)
       }).min
     }
@@ -103,7 +107,13 @@ object DockMain {
   def getDocker = {
     val innerDocker = DockArgs.dockerName match {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(DockArgs.surface))
-      case "ehc" => new EhcDocker(new SurfaceDistanceScorer(DockArgs.surface))
+      case "ehc" =>
+        val scorer =
+          if (DockArgs.scorerName == "ff")
+            new ForceVectorScore(DockArgs.surface, DockArgs.ignoreAHydrogens, 1.25, DockArgs.geometricForceWeight, DockArgs.electricForceWeight, DockArgs.hydrogenBondsForceWeight, DockArgs.bondForceWeight)
+          else
+            new SurfaceDistanceScorer(DockArgs.surface)
+        new EhcDocker(scorer, DockArgs.maxIters)
 
       case "forcevector" => new ForceVectorDocker(
         surface = DockArgs.surface,
@@ -152,18 +162,26 @@ object DockMain {
 
     try {
       while (i < args.length) {
-        args(i) match {
+        args(i).trim match {
+          case "" => i += 1
           case "-a" => DockArgs.pathA = args(i + 1);i += 2
           case "-b" => DockArgs.pathB = args(i + 1);i += 2
           case "-out" => DockArgs.pathOut = args(i + 1); i += 2
           case "-dir" => DockArgs.dir = args(i+1); i += 2
           case "-ref" => DockArgs.pathRefs = args(i+1); i += 2
           case "--randominit" => DockArgs.randomInit = true; i += 1
-
+          case "-initangle" => DockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
+          case "-initlevel" => DockArgs.initConfigLevel = args(i + 1).toInt; i += 2
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
-          case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
           case "-surface" => DockArgs.surface = args(i + 1).toDouble ; i += 2
+
+          // Hill Climbing:
+          case "-maxiters" => DockArgs.maxIters = args(i+1).toInt; i+=2
+          case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
+
+          // FF:
+          case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
           case "-permeability" => DockArgs.permeability = args(i + 1).toDouble ; i += 2
           case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
           case "--nogui" => DockArgs.liveGui = false; i += 1
@@ -189,9 +207,8 @@ object DockMain {
 
             i += 2
 
-          case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
-          case "-initangle" => DockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
-          case "-initlevel" => DockArgs.initConfigLevel = args(i + 1).toInt; i += 2
+
+
 
           case _ => sys.error(usage)
         }
@@ -217,6 +234,9 @@ object DockMain {
     var initAngle = Math.toRadians(90)
     var initConfigLevel = 0
     var randomInit = false
+
+    // Hill Climbing specifict
+    var maxIters = Int.MaxValue
 
     // Force vector docker specifics:
     var surface = 1.4
