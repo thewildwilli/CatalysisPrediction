@@ -13,14 +13,14 @@ import profiling.Profiler
 
 
 object DockMain {
-  val usage = "USAGE: scala DockMain -a (path to A, pdb format) " +
-    "-b (path to B, pdb format) " +
-    "-out (B's output path, xyz format) " +
-    " [-dir d] [--randominit] [-ref a,b,c,...]" +
-    "-docker (atompair|ehc|forcevector) [--consolelog] [--nogui] " +
+  val usage = "USAGE: scala DockMain -a (path to A) " +
+    "-b (path to B) " +
+    "-out (B's output path, mol2 format) " +
+    " [-dir d] [--randominit] [-workers w] [-ref a,b,c,...]" +
+    "-docker (ehc|forcevector) [--consolelog] [--nogui] " +
     " [-initangle a] [initlevel i]" +
     " [-maxiters m]" +
-    " [--ignorehydrogen] " +
+    " [--ignoreAhydrogens] " +
     " [-surface s] " +
     " [-permeability p]" +
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
@@ -29,15 +29,13 @@ object DockMain {
   val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
 
-  val viewInitCmds = getViewInitCmds
-
   def main(args: Array[String]): Unit = {
     parseArgs(args)
     val (docked, rmsd, _) = doMainDock(DockArgs.fullPathA, DockArgs.fullPathB, DockArgs.fullPathOut)
 
     new Mol2Writer(DockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(DockArgs.fullPathA, DockArgs.fullPathOut))  // show original a and modified b
-    jmolPanel.execSeq(viewInitCmds)
+    jmolPanel.execSeq(DockArgs.viewInitCmds)
     println(s"Finished with RMSD: $rmsd")
     Profiler.report
   }
@@ -56,7 +54,6 @@ object DockMain {
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
-//    println(s"Pairs: ${molA.atoms(DockArgs.ignoreAHydrogens).size * molB.surfaceAtoms.size}")
     val docker = getDocker
 
     val chan = OneOneBuf[Any](5)
@@ -72,12 +69,12 @@ object DockMain {
   def showActions(chan: ?[Any], panel: JmolPanel) = proc {
     repeat {
       val msg = chan?();
-      if (DockArgs.liveGui) {
+      if (DockArgs.liveGui && DockArgs.workers <= 1) {
         val s = msg match
         {
           case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
           case "save" => panel.exec(JmolCmds.save); "save"
-          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(viewInitCmds); "reset"
+          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(DockArgs.viewInitCmds); "reset"
           case other => other.toString
         }
         if (DockArgs.consoleLog)
@@ -105,15 +102,26 @@ object DockMain {
     * enhanced to use reflection.
     */
   def getDocker = {
-    val innerDocker = DockArgs.dockerName match {
+    if (DockArgs.workers <= 1 )
+        new MultipleInitialsDocker(getInnerDocker, DockArgs.initAngle,
+          DockArgs.initConfigLevel, DockArgs.randomInit)
+    else
+      new MultipleInitialsConcurrentDocker(() => getInnerDocker, DockArgs.initAngle,
+        DockArgs.initConfigLevel, DockArgs.randomInit, DockArgs.workers)
+  }
+
+  private def getInnerDocker = {
+    val scorer =
+      if (DockArgs.scorerName == "ff")
+        new ForceVectorScore(DockArgs.surface, DockArgs.ignoreAHydrogens, 1.25,
+          DockArgs.geometricForceWeight, DockArgs.electricForceWeight, DockArgs.hydrogenBondsForceWeight,
+          DockArgs.bondForceWeight, DockArgs.dockerName == "chain")
+      else
+        new SurfaceDistanceScorer(DockArgs.surface)
+
+    DockArgs.dockerName match {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(DockArgs.surface))
-      case "ehc" =>
-        val scorer =
-          if (DockArgs.scorerName == "ff")
-            new ForceVectorScore(DockArgs.surface, DockArgs.ignoreAHydrogens, 1.25, DockArgs.geometricForceWeight, DockArgs.electricForceWeight, DockArgs.hydrogenBondsForceWeight, DockArgs.bondForceWeight)
-          else
-            new SurfaceDistanceScorer(DockArgs.surface)
-        new EhcDocker(scorer, DockArgs.maxIters)
+      case "ehc" => new EhcDocker(scorer, DockArgs.maxIters)
 
       case "forcevector" => new ForceVectorDocker(
         surface = DockArgs.surface,
@@ -139,9 +147,21 @@ object DockMain {
         bondForceWeight = DockArgs.bondForceWeight
       )
 
+      case "chain" => new FFandEHC(
+        surface = DockArgs.surface,
+        permeability = DockArgs.permeability,
+        maxDecelerations = 10,
+        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
+        threshold = DockArgs.threshold,
+        geometricForceWeight = DockArgs.geometricForceWeight,
+        electricForceWeight = DockArgs.electricForceWeight,
+        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
+        bondForceWeight = DockArgs.bondForceWeight,
+        scorer, DockArgs.maxIters
+      )
+
       case _ => sys.error(usage)
     }
-    new MultipleInitialsDocker(innerDocker, DockArgs.initAngle, DockArgs.initConfigLevel, DockArgs.randomInit)
   }
 
   /**
@@ -151,7 +171,7 @@ object DockMain {
     */
   def getViewInitCmds = {
     try {
-      scala.io.Source.fromFile("viewinit.txt").getLines.toSeq
+      scala.io.Source.fromFile(DockArgs.dir + "viewinit.txt").getLines.toSeq
     } catch {
       case e: Exception => List[String]()
     }
@@ -168,6 +188,7 @@ object DockMain {
           case "-b" => DockArgs.pathB = args(i + 1);i += 2
           case "-out" => DockArgs.pathOut = args(i + 1); i += 2
           case "-dir" => DockArgs.dir = args(i+1); i += 2
+          case "-workers" => DockArgs.workers = args(i+1).toInt; i += 2; Profiler.setWorkers(DockArgs.workers + 8)
           case "-ref" => DockArgs.pathRefs = args(i+1); i += 2
           case "--randominit" => DockArgs.randomInit = true; i += 1
           case "-initangle" => DockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
@@ -218,6 +239,8 @@ object DockMain {
 
     if (!DockArgs.valid)
       sys.error(usage)
+
+    DockArgs.viewInitCmds = getViewInitCmds
   }
 
   object DockArgs {
@@ -234,6 +257,9 @@ object DockMain {
     var initAngle = Math.toRadians(90)
     var initConfigLevel = 0
     var randomInit = false
+    var workers = 1
+
+    var viewInitCmds = Seq[String]()
 
     // Hill Climbing specifict
     var maxIters = Int.MaxValue

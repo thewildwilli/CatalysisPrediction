@@ -15,7 +15,8 @@ class ForceVectorScore(val surface: Double = 1.4,
                        val geometricForceWeight: Double = .25,
                        val electricForceWeight: Double = .25,
                        val hydrogenBondsForceWeight: Double = .25,
-                       val bondForceWeight: Double = .25) extends Scorer {
+                       val bondForceWeight: Double = .25,
+                       val scoreOnlyTargetRadius: Boolean = false) extends Scorer {
 
   var avgBondEnergy = Double.NaN
   /**
@@ -102,6 +103,6 @@ class ForceVectorScore(val surface: Double = 1.4,
 
   override def score(state: State): Double = {
     val s = state.asInstanceOf[DockingState]
-    getScore(s.a, s.b, false)
+    getScore(s.a, s.b, scoreOnlyTargetRadius)
   }
 }

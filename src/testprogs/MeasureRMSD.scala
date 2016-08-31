@@ -15,7 +15,7 @@ object MeasureRMSD {
     */
   def main(args: Array[String]): Unit = {
     val modelCount = args(0).toInt
-    jmolPanel.openFiles(args.slice(1, args.length), false)
+    jmolPanel.openFiles(args.slice(1, args.length), pdbAddHydrogens = false)
     val refMol: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
 
     var rmsds = List[Double]()

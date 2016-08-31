@@ -9,10 +9,12 @@
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
-#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
+#    -workers 8 -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-5 -balance 1,10,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
 #
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
+#     -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -scorer ff -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb
+     
 
 #   Initlevel 1 
 
@@ -23,10 +25,11 @@
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
-#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
+#    -workers 8 -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-5 -balance 1,10,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
 #
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
+#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -scorer ff -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 1
 
 #   Initlevel 2
 
@@ -37,10 +40,11 @@
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
-#    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
+#    -workers 8 -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,5,1,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-5 -balance 1,10,5,0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
 #
 #    -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
+#     -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -scorer ff -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 -surface 0 --nogui --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -initlevel 2
 
 
     
@@ -50,31 +54,35 @@
 #   Init level 0
   
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,0,0 --nogui --randominit
-#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit 
+#   -workers 8 -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit 
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,10,0 --nogui --randominit
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0 --nogui --randominit
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,10,0 --randominit
     
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui --randominit
+#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -scorer ff -surface 0 -balance 0,0,1,0 --nogui --randominit 
+#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker chain -scorer ff -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -maxiters 50
     
 #   Init level 1
 
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,0,0 --nogui --randominit -initlevel 1
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,0,0 --nogui --randominit -initlevel 1
-#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -initlevel 1
+#   -workers 8 -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -initlevel 1
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit -initlevel 1
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,10,0 --nogui --randominit -initlevel 1
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0 --nogui --randominit -initlevel 1
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,10,0 --nogui --randominit -initlevel 1
 #    
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui --randominit -initlevel 1
+#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -scorer ff -surface 0 -balance 0,0,1,0 -maxiters 100 --nogui --randominit -initlevel 1
+#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker chain -scorer ff -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -maxiters 50 -initlevel 1
 
 #   Init level 2
 
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,0,0 --nogui --randominit -initlevel 2
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,0,0 --nogui --randominit -initlevel 2
-#    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -initlevel 2
+    -workers 8 -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -initlevel 2
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,0,1 --nogui --randominit -initlevel 2
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,5,0 --nogui --randominit -initlevel 2
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,10,0 --nogui --randominit -initlevel 2
@@ -82,6 +90,7 @@
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,10,0 --nogui --randominit -initlevel 2
 #    
 #    -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -surface 0 --nogui --randominit -initlevel 2
+#     -a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker chain -scorer ff -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,0,1,0 --nogui --randominit -maxiters 50 -initlevel 2
 
 
 #  ------ SMALL MOLECULES -------
@@ -93,17 +102,28 @@
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,1,0 --nogui --randominit
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0 --nogui --randominit
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,100,0 --nogui --randominit
+#     -workers 8 -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,100,0 --nogui --randominit
 
-#     -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -surface 0 -maxiters 100 --nogui --randominit
+#    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -surface 0 -maxiters 100 --nogui --randominit
+#     -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker chain -scorer ff -surface 0 -maxiters 50 -permeability 0 -threshold 1.0e-2 -balance 1,0,100,0 --nogui --randominit
     
 #     Init level 1    
 
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,1,1 --nogui --randominit -initlevel 1
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 0,1,1,0 --nogui --randominit -initlevel 1
 #    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,1,100,0 --nogui --randominit -initlevel 1
-#    -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,100,0 --nogui --randominit -initlevel 1
+#     -workers 8 -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector -surface 0 -permeability 0 -threshold 1.0e-2 -balance 1,0,100,0 --nogui --randominit -initlevel 1
 
 #     -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -surface 0 -maxiters 50 --nogui --randominit -initlevel 1
+
+#   -- Complementary 12-mers --
+#     Init level 0
+#        -a 12mer/12merSS_wc.mol2 -b 12mer/12merComp_wc.mol2 -out 12mer/docked.mol2 -docker forcevector -surface 0 -permeability 0.8 -threshold 1.0e-2 -balance 1,0,0,0 --randominit --nogui
+#        -a 12mer/12merSS_wc.mol2 -b 12mer/12merComp_wc.mol2 -out 12mer/docked.mol2 -docker forcevector -surface 0 -permeability 0.8 -threshold 1.0e-2 -balance 1,0,1,0 --randominit --nogui
+#        -a 12mer/12merSS_wc.mol2 -b 12mer/12merComp_wc.mol2 -out 12mer/docked.mol2 -docker forcevector -surface 0 -permeability 0.8 -threshold 1.0e-2 -balance 5,0,1,0 --randominit --nogui
+
+#        -a 12mer/12merSS_wc.mol2 -b 12mer/12merComp_wc.mol2 -out 12mer/docked.mol2 -docker ehc -surface 0 -maxiters 100 --randominit --nogui
+#         -a 12mer/12merSS_wc.mol2 -b 12mer/12merComp_wc.mol2 -out 12mer/docked.mol2 -docker chain -scorer ff -surface 0 -maxiters 50 -permeability 0.8 -threshold 1.0e-2 -balance 5,0,1,0 --randominit --nogui  
       
     
 #  ------ LARGE MOLECULES ------- 
@@ -112,17 +132,20 @@
 #    Init level 0
       
 #     -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,0,0 --randominit --nogui
-#     -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 --randominit --nogui
+#     -workers 8 -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 --randominit --nogui
 #     -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 0,0,1,0 --randominit --nogui
 
-#      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker ehc -surface 1.4 -maxiters 100 --randominit --nogui
+#     -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker ehc -surface 1.4 -maxiters 100 --randominit --nogui
+#      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker chain --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 -maxiters 50 --randominit --nogui
+#      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker chain --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 -maxiters 20 --nogui --randominit 
 
 #    Init level 1    
 #      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,0,0 --randominit --nogui -initlevel 1
-#      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 --randominit --nogui -initlevel 1
+#      -workers 8 -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 --randominit --nogui -initlevel 1
 #      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 0,0,1,0 --randominit --nogui -initlevel 1
 
 #      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker ehc -surface 1.4 -maxiters 100 --randominit --nogui -initlevel 1
+#      -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker chain --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 -maxiters 20 --nogui --randominit  -initlevel 1
     
 #    -- 3BWA --
 #     Init level 0
@@ -131,6 +154,6 @@
 #        -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-2 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 --randominit --nogui
 #        -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-2 -surface 1.4 -permeability 0.90 -balance 0,0,1,0 --randominit --nogui
         
-#        -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -surface 1.4 -maxiters 100 --randominit --nogui
-         -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -scorer ff -surface 1.4 -maxiters 100 --randominit --nogui
+#        -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -surface 1.4 -maxiters 20 --randominit
+#        -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker chain -scorer ff --ignoreAhydrogens -threshold 1.0e-2 -surface 1.4 -permeability 0.90 -balance 1,0,1,0 -surface 1.4 -maxiters 50 --randominit --nogui
   

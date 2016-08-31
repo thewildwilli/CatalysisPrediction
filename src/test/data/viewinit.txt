@@ -1,13 +1,14 @@
 select model=1.1
-cartoon only
-#color atom partialCharge
-color grey
-
-select model=2.1
 #cartoon only
 #color atom partialCharge
-color black
+color silver
+
+select model=2.1
+#carton only
+#color atom partialCharge
+color red
 
 model all
-background white
+#background white
 moveTo 0 front
+#zoom 75

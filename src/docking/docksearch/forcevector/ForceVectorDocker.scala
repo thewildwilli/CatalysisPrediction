@@ -184,11 +184,12 @@ class ForceVectorDocker(val surface: Double = 1.4,
   /** Returns a list of pairs (Atom, DenseVector) containing the net force for
     * each atom in molB.     */
   private def getForces(molA: Molecule, molB: Molecule) = {
+   // val (minDist, maxDist) = molA.atoms(ignoreAHydrogens).foldLeft(Double.PositiveInfinity, Double.NegativeInfinity)
+   //   { case ((min, max), a) => {val d = a.distTo(molB.getGeometricCentre); (Math.min(min, d), Math.max(max, d)) }}
+    val maxCover = Int.MaxValue// minDist + (maxDist - minDist) * 0.2
+
     val forces = for (atomB <- molB.surfaceAtoms) yield {
       var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
-      val (minDist, maxDist) = molA.atoms(ignoreAHydrogens).foldLeft(Double.PositiveInfinity, Double.NegativeInfinity)
-        { case ((min, max), a) => {val d = a.distTo(atomB); (Math.min(min, d), Math.max(max, d)) }}
-      val maxCover = (minDist + maxDist) / 2
 
       for (atomA <- molA.atoms(ignoreAHydrogens)){
         val opt = optimalDistance(atomA, atomB, surface)
