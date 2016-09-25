@@ -12,5 +12,6 @@
     <orderEntry type="library" name="org.scalatest:scalatest_2.11:2.2.6-M1" level="project" />
     <orderEntry type="library" name="threadcso" level="project" />
     <orderEntry type="library" name="jmol-14.12.14" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.11.7" level="application" />
   </component>
 </module>
