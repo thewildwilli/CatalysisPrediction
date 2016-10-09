@@ -30,9 +30,15 @@ Although this project does not target large molecules specificallty, experiments
 
 ## Running the program
 
-You can download a binary release. You will need Java 1.8 and Scala 2.11 installed.
+You can [download a binary release] (releases/). You will need Java 1.8 and Scala 2.11.7 installed.
 
-## 
+Extract the zip and run: `java -jar CatalysisPrediction.jar [args]`
+
+You can see the list of program arguments [here](wiki/Program-arguments).
+
+## Compiling
+
+Intellij Idea with Scala plug-in was used for development and is the recommended choice. Clone the repository or download sources. You may need to check that the Scala library is correctly linked to the project.
 
 <hr/>
 <sup>1</sup> M. Steel and W. Hordijk, “Detecting autocatalytic, self-sustaining sets in chemical reaction systems,” Journal of theoretical biology,vol. 277, no. 4, pp. 451-461, 2004
