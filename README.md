@@ -52,7 +52,7 @@ Intellij Idea with Scala plug-in was used for development and is the recommended
 
 - [Jmol](http://jmol.sourceforge.net/) is used for molecule 3D visualisation. 
 - [Breeze](http://www.scalanlp.org/) is used for linear algebra operations.
-- ThreadCSO<sup>3</sup> is used for concurrent programming
+- ThreadCSO<sup>3</sup> is used for concurrent programming.
 
 Additionally, [SimRNA](http://genesilico.pl/software/stand-alone/simrna), [RNA Composer](http://rnacomposer.cs.put.poznan.pl/), [Make-NA](http://structure.usc.edu/make-na/server.html), and [OpenBabel](http://openbabel.org/) were used to generate some of the test data, but are not dependencies of the code.
 
