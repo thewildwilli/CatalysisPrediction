@@ -44,6 +44,8 @@ java -jar CatalysisPrediction.jar -dir test/data/ -a 3HTB/3HTB_protein.pdb -b 3H
 
 You may also want [to edit your `viewinit.txt`](wiki/viewinit.txt) file to adjust how molecules are visualised.
 
+Note: program reported RMSD is in *Angstroms*.
+
 ## Compiling
 
 Intellij Idea with Scala plug-in was used for development and is the recommended choice. Clone the repository or download sources. You may need to check that the Scala library is correctly linked to the project.
