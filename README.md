@@ -30,17 +30,35 @@ Although this project does not target large molecules specificallty, experiments
 
 ## Running the program
 
-You can [download a binary release] (releases/). You will need Java 1.8 and Scala 2.11.7 installed.
+You can [download a binary release] (releases/). You will need Java 1.8 and Scala 2.11.7 installed. Extract the zip and run:
 
-Extract the zip and run: `java -jar CatalysisPrediction.jar [args]`
+`java -jar CatalysisPrediction.jar [args]`
 
-You can see the list of program arguments [here](wiki/Program-arguments).
+You can see the list of program arguments [here](wiki/Program-arguments). 
+
+The binaries ship with some test data (`test` directory), so you can get started right away. For example, try:
+
+```
+java -jar CatalysisPrediction.jar -dir test/data/ -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0
+```
+
+You may also want [to edit your `viewinit.txt`](wiki/viewinit.txt) file to adjust how molecules are visualised.
 
 ## Compiling
 
 Intellij Idea with Scala plug-in was used for development and is the recommended choice. Clone the repository or download sources. You may need to check that the Scala library is correctly linked to the project.
 
+## Libraries
+
+- [Jmol](http://jmol.sourceforge.net/) is used for molecule 3D visualisation. 
+- [Breeze](http://www.scalanlp.org/) is used for linear algebra operations.
+- ThreadCSO<sup>3</sup> is used for concurrent programming
+
+Additionally, [SimRNA](http://genesilico.pl/software/stand-alone/simrna), [RNA Composer](http://rnacomposer.cs.put.poznan.pl/), [Make-NA](http://structure.usc.edu/make-na/server.html), and [OpenBabel](http://openbabel.org/) were used to generate some of the test data, but are not dependencies of the code.
+
 <hr/>
 <sup>1</sup> M. Steel and W. Hordijk, “Detecting autocatalytic, self-sustaining sets in chemical reaction systems,” Journal of theoretical biology,vol. 277, no. 4, pp. 451-461, 2004
 
 <sup>2</sup> Ernesto Ocampo, "A Fast Double Docking Algorithm for Catalysis Prediction", 2016. Dissertation submitted for the degree of Master of Science in Computer Science, University of Oxford, under the supervision of Jotun Hein and Peter Jeavons.
+
+<sup>3</sup> B. Sufrin, “Communicating Scala Objects.,” in CPA, 2008
