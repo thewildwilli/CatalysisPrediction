@@ -42,7 +42,7 @@ The binaries ship with some test data (`test` directory), so you can get started
 java -jar CatalysisPrediction.jar -dir test/data/ -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0
 ```
 
-You may also want [to edit your `viewinit.txt`](wiki/viewinit.txt) file to adjust how molecules are visualised.
+You may also want to [edit your `viewinit.txt`](wiki/viewinit.txt) file to adjust how molecules are visualised.
 
 Note: program reported RMSD is in *Angstroms*.
 
