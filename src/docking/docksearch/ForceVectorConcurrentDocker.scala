@@ -4,21 +4,13 @@ import breeze.linalg
 import breeze.linalg._
 import docking.dockscore.Scorer
 import docking._
+import docking.docksearch.forcevector.DockingParams
 import opt._
 import io.threadcso._
 import model._
 import profiling.Profiler
 
-class ForceVectorConcurrentDockerDocker(
-                        val surface: Double = 1.4,
-                        val permeability: Double = 0.5,
-                        val maxDecelerations: Int = 10,
-                        val ignoreAHydrogens: Boolean = false,
-                        val threshold: Double = 1.0e-5,
-                        val geometricForceWeight: Double = .25,
-                        val electricForceWeight: Double = .25,
-                        val hydrogenBondsForceWeight: Double = .25,
-                        val bondForceWeight: Double = .25) extends Docker {
+class ForceVectorConcurrentDockerDocker(params: DockingParams) extends Docker {
 
   val workers = 1
 
@@ -143,8 +135,8 @@ class ForceVectorConcurrentDockerDocker(
     currScore += currIterScore
     if (i % window == 0) {
 
-      if (currScore - lastScore < threshold) {
-        if (decelerations >= maxDecelerations  && !approachPhase) {
+      if (currScore - lastScore < params.threshold) {
+        if (decelerations >= params.maxDecelerations  && !approachPhase) {
           done = true
         } else {
           // decelerate
@@ -162,7 +154,7 @@ class ForceVectorConcurrentDockerDocker(
             currIterScore = 0
           }
         }
-      } else if (currScore > bestScore + threshold) {
+      } else if (currScore > bestScore + params.threshold) {
         decelerations = 0
         if (approachPhase) {
           maxAngle = initialDeltaAngle
@@ -248,7 +240,7 @@ class ForceVectorConcurrentDockerDocker(
 
   def pushTasks(atomB: Atom, molA: Molecule, out: ![(Atom, Atom)]) = {
     var shortest = Double.PositiveInfinity
-    for (atomA <- molA.atoms(ignoreAHydrogens)) {
+    for (atomA <- molA.atoms(params.ignoreAHydrogens)) {
       if (atomA.isSurface) {
         val cover = if (approachPhase)
           Math.max(forceShortestDistance * minCoverage, maxCoverage * softness)
@@ -332,10 +324,10 @@ class ForceVectorConcurrentDockerDocker(
     val bondForce = dir * getBondForceNorm(atomA, atomB, actualDistance, optimal)
 
     val force =     // weighted result:
-      geometricForce * geometricForceWeight +
-        electricForce * electricForceWeight +
-        hydrogenBondsForce * hydrogenBondsForceWeight +
-        bondForce * bondForceWeight
+      geometricForce * params.geometricForceWeight +
+        electricForce * params.electricForceWeight +
+        hydrogenBondsForce * params.hydrogenBondsForceWeight +
+        bondForce * params.bondForceWeight
 
     force
   }
@@ -426,7 +418,7 @@ class ForceVectorConcurrentDockerDocker(
       val dir = dif / actualDistance;                                // normalized to length 1
       val normalized = actualDistance/penalizationDistance
       val force = dir * Math.log(normalized)
-      (1 - permeability) * force
+      (1 - params.permeability) * force
     } else
       DenseVector(0.0, 0.0, 0.0)
   }
@@ -448,7 +440,7 @@ class ForceVectorConcurrentDockerDocker(
 
     var aCount = 0
     var bCount = 0
-    for (a <- molA.surfaceAtoms(ignoreAHydrogens) ){
+    for (a <- molA.surfaceAtoms(params.ignoreAHydrogens) ){
       aCount += 1
       for(b <- molB.surfaceAtoms) {
         bCount += 1
@@ -482,10 +474,10 @@ class ForceVectorConcurrentDockerDocker(
       }
     }
     val totalScore =
-      totalGeometricScore * geometricForceWeight +
-        totalElectricScore * electricForceWeight +
-        totalHBondScore * hydrogenBondsForceWeight +
-        totalBondStrengthScore * bondForceWeight
+      totalGeometricScore * params.geometricForceWeight +
+        totalElectricScore * params.electricForceWeight +
+        totalHBondScore * params.hydrogenBondsForceWeight +
+        totalBondStrengthScore * params.bondForceWeight
     //println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
     totalScore / (Math.min(aCount, bCount))
   }
@@ -495,9 +487,9 @@ class ForceVectorConcurrentDockerDocker(
 
   private def optimalDistance(a: Atom, b: Atom) = {
     if (canHBond(a, b) || canHBond(b, a))
-      hBondDistance + 2 * surface
+      hBondDistance + 2 * params.surface
     else
-      (a.radius + b.radius) * 0.9 + 2 * surface
+      (a.radius + b.radius) * 0.9 + 2 * params.surface
     //(if (a.isElement("H") || b.isElement("H")) 0.0 else 2 * surface)
   }
 

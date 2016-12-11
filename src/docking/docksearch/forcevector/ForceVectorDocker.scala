@@ -9,15 +9,7 @@ import profiling.Profiler
 import HBond._
 import Functions._
 
-class ForceVectorDocker(val surface: Double = 1.4,
-                        val permeability: Double = 0.5,
-                        val maxDecelerations: Int = 10,
-                        val ignoreAHydrogens: Boolean = false,
-                        val threshold: Double = 1.0e-5,
-                        val geometricForceWeight: Double = .25,
-                        val electricForceWeight: Double = .25,
-                        val hydrogenBondsForceWeight: Double = .25,
-                        val bondForceWeight: Double = .25) extends Docker {
+class ForceVectorDocker(val params: DockingParams) extends Docker {
 
   val initialDeltaAngle = Math.toRadians(5)
   val initialDeltaSpace = 0.5
@@ -46,8 +38,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
   var shortestDistance = Double.NegativeInfinity
   var forceShortestDistance = Double.PositiveInfinity
 
-  val scorer = new ForceVectorScore(surface, ignoreAHydrogens, minCoverage,
-    geometricForceWeight, electricForceWeight, hydrogenBondsForceWeight, bondForceWeight)
+  val scorer = new ForceVectorScore(params, minCoverage)
 
   /**  Docks b into a from b's initial position and orientation, using force vectors.
     *   Try to minimize score
@@ -103,8 +94,8 @@ class ForceVectorDocker(val surface: Double = 1.4,
     currWindowScore += currIterScore
     if (i % window == 0) {
 
-      if (currWindowScore - lastWindowScore < threshold) {
-        if ((decelerations >= maxDecelerations  && !approachPhase) || decelerations > 100) {
+      if (currWindowScore - lastWindowScore < params.threshold) {
+        if ((decelerations >= params.maxDecelerations  && !approachPhase) || decelerations > 100) {
           done = true
         } else {
           // decelerate
@@ -122,7 +113,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
             currIterScore = 0
           }
         }
-      } else if (currWindowScore > bestWindowScore + threshold) {
+      } else if (currWindowScore > bestWindowScore + params.threshold) {
         decelerations = 0
         if (approachPhase) {
           maxAngle = initialDeltaAngle
@@ -191,8 +182,8 @@ class ForceVectorDocker(val surface: Double = 1.4,
     val forces = for (atomB <- molB.surfaceAtoms) yield {
       var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
 
-      for (atomA <- molA.atoms(ignoreAHydrogens)){
-        val opt = optimalDistance(atomA, atomB, surface)
+      for (atomA <- molA.atoms(params.ignoreAHydrogens)){
+        val opt = optimalDistance(atomA, atomB, params.surface)
         val cover = (
           if (approachPhase)
             maxCover
@@ -206,7 +197,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
             forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
             atomWithinMinCover |= actualDistance <= opt * minCoverage;
           } else {
-            forceOnAtomB += (1-permeability) * getPenetrationPenaltyForce(atomA, atomB)
+            forceOnAtomB += (1-params.permeability) * getPenetrationPenaltyForce(atomA, atomB)
           }
         }
       }
@@ -232,7 +223,7 @@ class ForceVectorDocker(val surface: Double = 1.4,
   /** Calculates the total force that molA exerts on atomB: the sum
     * of the forces each atom in a exerts on atomB   */
   private def molToAtomForce(molA: Molecule, atomB: Atom, molB: Molecule) = {
-    molA.surfaceAtoms(ignoreAHydrogens)
+    molA.surfaceAtoms(params.ignoreAHydrogens)
       .map(atomA => atomToAtomForce(atomA, atomB, molA, molB))
       .reduce((a,b) => a+b)
   }
@@ -251,18 +242,18 @@ class ForceVectorDocker(val surface: Double = 1.4,
     val dif = atomA.coords - atomB.coords;                    // direction from b to a
     val actualDistance = norm(dif)
     val dir = dif / actualDistance;                                // normalized to length 1
-    val optimal = optimalDistance(atomA, atomB, surface)
+    val optimal = optimalDistance(atomA, atomB, params.surface)
 
-    val geometricForce = if (geometricForceWeight > 0) dir * getGeometricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
-    val electricForce = if (electricForceWeight > 0) dir * getElectricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
-    val hydrogenBondsForce = if (hydrogenBondsForceWeight > 0) getHydrogenBondsForce(atomA, atomB, molA, molB, actualDistance) else DenseVector(0.0,0.0,0.0)
-    val bondForce = if (bondForceWeight > 0) dir * getBondForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
+    val geometricForce = if (params.geometricForceWeight > 0) dir * getGeometricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
+    val electricForce = if (params.electricForceWeight > 0) dir * getElectricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
+    val hydrogenBondsForce = if (params.hydrogenBondsForceWeight > 0) getHydrogenBondsForce(atomA, atomB, molA, molB, actualDistance) else DenseVector(0.0,0.0,0.0)
+    val bondForce = if (params.bondForceWeight > 0) dir * getBondForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
 
     val force =     // weighted result:
-      geometricForce * geometricForceWeight +
-        electricForce * electricForceWeight +
-        hydrogenBondsForce * hydrogenBondsForceWeight +
-        bondForce * bondForceWeight
+      geometricForce * params.geometricForceWeight +
+        electricForce * params.electricForceWeight +
+        hydrogenBondsForce * params.hydrogenBondsForceWeight +
+        bondForce * params.bondForceWeight
 
     force
   }

@@ -2,7 +2,7 @@ package prog
 
 import docking.dockscore._
 import docking.docksearch._
-import docking.docksearch.forcevector.{ForceVectorDocker, ForceVectorScore}
+import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
 import io.Mol2Writer
 import io.threadcso._
 import jmolint.JmolCmds._
@@ -54,7 +54,7 @@ object DockMain {
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
-    val docker = getDocker
+    val docker = getDocker(molA, molB)
 
     val chan = OneOneBuf[Any](5)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
@@ -101,67 +101,49 @@ object DockMain {
     * Gets an instance of a docker given the name. In the future, this could be
     * enhanced to use reflection.
     */
-  def getDocker = {
+  def getDocker(molA: Molecule, molB: Molecule) = {
     if (DockArgs.workers <= 1 )
-        new MultipleInitialsDocker(getInnerDocker, DockArgs.initAngle,
+        new MultipleInitialsDocker(getInnerDocker(molA, molB), DockArgs.initAngle,
           DockArgs.initConfigLevel, DockArgs.randomInit)
     else
-      new MultipleInitialsConcurrentDocker(() => getInnerDocker, DockArgs.initAngle,
+      new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB), DockArgs.initAngle,
         DockArgs.initConfigLevel, DockArgs.randomInit, DockArgs.workers)
   }
 
-  private def getInnerDocker = {
+  private def getInnerDocker(molA: Molecule, molB: Molecule) = {
+    val ffparams = getFFParams(molA, molB)
     val scorer =
       if (DockArgs.scorerName == "ff")
-        new ForceVectorScore(DockArgs.surface, DockArgs.ignoreAHydrogens, 1.25,
-          DockArgs.geometricForceWeight, DockArgs.electricForceWeight, DockArgs.hydrogenBondsForceWeight,
-          DockArgs.bondForceWeight, DockArgs.dockerName == "chain")
+        new ForceVectorScore(ffparams, 1.25, DockArgs.dockerName == "chain")
       else
         new SurfaceDistanceScorer(DockArgs.surface)
 
     DockArgs.dockerName match {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(DockArgs.surface))
       case "ehc" => new EhcDocker(scorer, DockArgs.maxIters)
-
-      case "forcevector" => new ForceVectorDocker(
-        surface = DockArgs.surface,
-        permeability = DockArgs.permeability,
-        maxDecelerations = 10,
-        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
-        threshold = DockArgs.threshold,
-        geometricForceWeight = DockArgs.geometricForceWeight,
-        electricForceWeight = DockArgs.electricForceWeight,
-        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
-        bondForceWeight = DockArgs.bondForceWeight
+      case "forcevector" => new ForceVectorDocker(ffparams)
+      case "forcevectorc" => new ForceVectorConcurrentDockerDocker(ffparams)
+      case "chain" => new FFandEHC(ffparams, scorer, DockArgs.maxIters
       )
-
-      case "forcevectorc" => new ForceVectorConcurrentDockerDocker(
-        surface = DockArgs.surface,
-        permeability = DockArgs.permeability,
-        maxDecelerations = 10,
-        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
-        threshold = DockArgs.threshold,
-        geometricForceWeight = DockArgs.geometricForceWeight,
-        electricForceWeight = DockArgs.electricForceWeight,
-        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
-        bondForceWeight = DockArgs.bondForceWeight
-      )
-
-      case "chain" => new FFandEHC(
-        surface = DockArgs.surface,
-        permeability = DockArgs.permeability,
-        maxDecelerations = 10,
-        ignoreAHydrogens = DockArgs.ignoreAHydrogens,
-        threshold = DockArgs.threshold,
-        geometricForceWeight = DockArgs.geometricForceWeight,
-        electricForceWeight = DockArgs.electricForceWeight,
-        hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight,
-        bondForceWeight = DockArgs.bondForceWeight,
-        scorer, DockArgs.maxIters
-      )
-
       case _ => sys.error(usage)
     }
+  }
+
+  def getFFParams(molA: Molecule, molB: Molecule) = {
+    val params = DockingParamsHeuristic.estimate(molA, molB)
+    if (DockArgs.balanceIsSet){
+      params.geometricForceWeight = DockArgs.geometricForceWeight
+      params.electricForceWeight = DockArgs.electricForceWeight
+      params.hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight
+      params.bondForceWeight = DockArgs.bondForceWeight
+    }
+    if (DockArgs.surfaceIsSet)
+      params.surface = DockArgs.surface
+    if (DockArgs.permeabilityIsSet)
+      params.permeability = DockArgs.permeability
+    if (DockArgs.ignoreHydrogensIsSet)
+      params.ignoreAHydrogens = DockArgs.ignoreAHydrogens
+    params
   }
 
   /**
@@ -195,7 +177,7 @@ object DockMain {
           case "-initlevel" => DockArgs.initConfigLevel = args(i + 1).toInt; i += 2
           case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
           case "--consolelog" => DockArgs.consoleLog = true; i += 1
-          case "-surface" => DockArgs.surface = args(i + 1).toDouble ; i += 2
+          case "-surface" => DockArgs.surface = args(i + 1).toDouble; DockArgs.surfaceIsSet = true; i += 2
 
           // Hill Climbing:
           case "-maxiters" => DockArgs.maxIters = args(i+1).toInt; i+=2
@@ -203,8 +185,8 @@ object DockMain {
 
           // FF:
           case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
-          case "-permeability" => DockArgs.permeability = args(i + 1).toDouble ; i += 2
-          case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; i += 1
+          case "-permeability" => DockArgs.permeability = args(i + 1).toDouble; DockArgs.permeabilityIsSet = true; i += 2
+          case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; DockArgs.ignoreHydrogensIsSet = true; i += 1
           case "--nogui" => DockArgs.liveGui = false; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
@@ -226,11 +208,8 @@ object DockMain {
             DockArgs.hydrogenBondsForceWeight = hydrogenBondsForceWeight / sum
             DockArgs.bondForceWeight = bondForceWeight / sum
 
+            DockArgs.balanceIsSet = true
             i += 2
-
-
-
-
           case _ => sys.error(usage)
         }
       }
@@ -261,19 +240,26 @@ object DockMain {
 
     var viewInitCmds = Seq[String]()
 
-    // Hill Climbing specifict
-    var maxIters = Int.MaxValue
+    // Hill Climbing specific
+    var maxIters = Int.MaxValue - 1
 
     // Force vector docker specifics:
     var surface = 1.4
+    var surfaceIsSet = false  // becomes true if overridden in program args
+
     var permeability = 0.5
+    var permeabilityIsSet = false  // becomes true if overridden in program args
+
     var ignoreAHydrogens = false
+    var ignoreHydrogensIsSet = false  // becomes true if overridden in program args
+
     var threshold = 1.0e-5
       // Force vector force balance: either all 3 set, or all 3 with default values
     var geometricForceWeight = 0.25
     var electricForceWeight = 0.25
     var hydrogenBondsForceWeight = 0.25
     var bondForceWeight = 0.25
+    var balanceIsSet = false  // becomes true if overridden in program args
 
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
       Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&
@@ -289,7 +275,5 @@ object DockMain {
         List[String]()
       else
         for (p <- pathRefs.split(",")) yield dir + p.trim
-
   }
-
 }

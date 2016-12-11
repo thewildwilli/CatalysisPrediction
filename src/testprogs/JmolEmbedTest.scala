@@ -9,7 +9,7 @@ import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
 import model.Molecule
 import opt.Action
 import JmolCmds._
-import docking.docksearch.forcevector.ForceVectorDocker
+import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker}
 
 object JmolEmbedTest {
 
@@ -49,7 +49,7 @@ object JmolEmbedTest {
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = new PdbReader(args(1)).read
     val scorer: Scorer = new SurfaceDistanceScorer(1.4)
-    val docker: Docker = new ForceVectorDocker
+    val docker: Docker = new ForceVectorDocker(DockingParamsHeuristic.estimate(molA, molB))
 
     val chan = OneOne[Any]
     var dockResult = (null.asInstanceOf[Molecule], 0.0)

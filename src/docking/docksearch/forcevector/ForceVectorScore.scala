@@ -9,13 +9,8 @@ import HBond._
 import Functions._
 import docking.DockingState
 
-class ForceVectorScore(val surface: Double = 1.4,
-                       val ignoreAHydrogens: Boolean = false,
+class ForceVectorScore(val params: DockingParams,
                        val minCoverage: Double = 1.25,
-                       val geometricForceWeight: Double = .25,
-                       val electricForceWeight: Double = .25,
-                       val hydrogenBondsForceWeight: Double = .25,
-                       val bondForceWeight: Double = .25,
                        val scoreOnlyTargetRadius: Boolean = false) extends Scorer {
 
   var avgBondEnergy = Double.NaN
@@ -45,20 +40,20 @@ class ForceVectorScore(val surface: Double = 1.4,
 
     var aCount = 0
     var bCount = 0
-    for (a <- molA.surfaceAtoms(ignoreAHydrogens) ){
+    for (a <- molA.surfaceAtoms(params.ignoreAHydrogens) ){
       aCount += 1
       for(b <- molB.surfaceAtoms) {
         bCount += 1
         val actualDistance = a.distTo(b)
-        val opt = optimalDistance(a, b, surface)
+        val opt = optimalDistance(a, b, params.surface)
         if (!onlyTargetRadius || actualDistance <= opt * minCoverage) {
           val n = actualDistance / opt
 
-          if (geometricForceWeight > 0)
+          if (params.geometricForceWeight > 0)
             if (!a.isElement("H") && !b.isElement("H"))
               totalGeometricScore += explog2(n * explog2.maxX) / explog2.maxY
 
-          if (electricForceWeight > 0) {
+          if (params.electricForceWeight > 0) {
             val chargeProduct = a.partialCharge * b.partialCharge
             totalElectricScore += (
               if (chargeProduct < 0)
@@ -70,10 +65,10 @@ class ForceVectorScore(val surface: Double = 1.4,
               )
           }
 
-          if (hydrogenBondsForceWeight > 0)
+          if (params.hydrogenBondsForceWeight > 0)
             totalHBondScore += hScore(getVectToHBondSpot(a, b, molA)) + hScore(getVectToHBondSpot(b, a, molB))
 
-          if (bondForceWeight > 0) {
+          if (params.bondForceWeight > 0) {
             val bondEnergy = BondEnergy(a.element, b.element)
             val frac = bondEnergy / avgBondEnergy
             totalBondStrengthScore += (
@@ -89,10 +84,10 @@ class ForceVectorScore(val surface: Double = 1.4,
       }
     }
     val totalScore =
-      totalGeometricScore * geometricForceWeight +
-        totalElectricScore * electricForceWeight +
-        totalHBondScore * hydrogenBondsForceWeight +
-        totalBondStrengthScore * bondForceWeight
+      totalGeometricScore * params.geometricForceWeight +
+        totalElectricScore * params.electricForceWeight +
+        totalHBondScore * params.hydrogenBondsForceWeight +
+        totalBondStrengthScore * params.bondForceWeight
     //println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
     totalScore / (Math.min(aCount, bCount))
   }
