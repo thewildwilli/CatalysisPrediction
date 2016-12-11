@@ -36,15 +36,26 @@ You can [download a binary release] (releases/). You will need Java 1.8 and Scal
 
 You can see the list of program arguments [here](wiki/Program-arguments). 
 
-The binaries ship with some test data (`test` directory), so you can get started right away. For example, try:
+The binaries ship with some test data (`testdata` directory), so you can get started right away. For example, try:
 
 ```
-java -jar CatalysisPrediction.jar -dir test/data/ -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0
+java -jar CatalysisPrediction.jar -dir testdata -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 -docker forcevector --ignoreAhydrogens -threshold 1.0e-5 -surface 1.4 -permeability 0.90 -balance 1,0,1,0
 ```
 
 You may also want to [edit your `viewinit.txt`](wiki/viewinit.txt) file to adjust how molecules are visualised.
 
 Note: program reported RMSD is in *Angstroms*.
+
+The benchmarking tool will perform multiple runs and report the average RMSD and time of each. It invokes the main program for each line in file `benchmarkcmds.txt`. Example:
+
+```
+cd testdata
+java -cp ../CatalysisPrediction.jar prog.Benchmarker [-r 50]
+```
+where `-r` specifies the number of runs for each line of `benchmarkcmds.txt`. This is a sample line of this file:
+```
+-a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 -docker forcevector --nogui --randominit -workers 8
+```
 
 ## Compiling
 
