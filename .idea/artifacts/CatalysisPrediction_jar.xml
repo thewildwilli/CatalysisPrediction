@@ -1,0 +1,20 @@
+<component name="ArtifactManager">
+  <artifact name="CatalysisPrediction:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/CatalysisPrediction_jar</output-path>
+    <root id="root">
+      <element id="archive" name="CatalysisPrediction.jar">
+        <element id="module-output" name="CatalysisPrediction" />
+      </element>
+      <element id="directory" name="lib">
+        <element id="library" level="project" name="jmol-14.12.14" />
+        <element id="library" level="project" name="org.scalanlp:breeze_2.11:0.11.2" />
+        <element id="library" level="project" name="org.scalatest:scalatest_2.11:2.2.6-M1" />
+        <element id="library" level="project" name="threadcso" />
+        <element id="library" level="application" name="scala-sdk-2.11.7" />
+      </element>
+      <element id="directory" name="testdata">
+        <element id="dir-copy" path="$PROJECT_DIR$/src/test/data" />
+      </element>
+    </root>
+  </artifact>
+</component>
