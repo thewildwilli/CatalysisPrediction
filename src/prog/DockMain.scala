@@ -30,21 +30,21 @@ object DockMain {
   val jmolPanel = frame.getPanel
 
   def main(args: Array[String]): Unit = {
-    parseArgs(args)
-    val (docked, rmsd, _) = doMainDock(DockArgs.fullPathA, DockArgs.fullPathB, DockArgs.fullPathOut)
+    val dockArgs = parseArgs(args)
+    val (docked, rmsd, _) = doMainDock(dockArgs)
 
-    new Mol2Writer(DockArgs.fullPathOut).write(docked)      // write docked b to file
-    jmolPanel.openFiles(List(DockArgs.fullPathA, DockArgs.fullPathOut))  // show original a and modified b
-    jmolPanel.execSeq(DockArgs.viewInitCmds)
+    new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut))  // show original a and modified b
+    jmolPanel.execSeq(dockArgs.viewInitCmds)
     println(s"Finished with RMSD: $rmsd")
     Profiler.report
   }
 
 
-  def doMainDock(pathA: String, pathB: String, pathOut: String) = {
+  def doMainDock(dockArgs: DockArgs) = {
     //val startTime = System.currentTimeMillis()
 
-    jmolPanel.openFiles(List(pathA, pathB))
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB))
     jmolPanel.execSync(
       selectModel("2.1"),
       setLog(0),
@@ -54,42 +54,42 @@ object DockMain {
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
-    val docker = getDocker(molA, molB)
+    val docker = getDocker(molA, molB, dockArgs)
 
     val chan = OneOneBuf[Any](5)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
     (proc { dockResult = docker.dock(molA, molB.clone, chan); chan.close } ||
-      showActions(chan, jmolPanel))()
+      showActions(chan, jmolPanel, dockArgs))()
 
     val docked = dockResult._1
     val score = dockResult._2
-    (docked, getRMSD(docked, molB), score)
+    (docked, getRMSD(docked, molB, dockArgs.fullPathsRef), score)
   }
 
-  def showActions(chan: ?[Any], panel: JmolPanel) = proc {
+  def showActions(chan: ?[Any], panel: JmolPanel, dockArgs: DockArgs) = proc {
     repeat {
-      val msg = chan?();
-      if (DockArgs.liveGui && DockArgs.workers <= 1) {
+      val msg = chan?()
+      if (dockArgs.liveGui && dockArgs.workers <= 1) {
         val s = msg match
         {
           case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
           case "save" => panel.exec(JmolCmds.save); "save"
-          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(DockArgs.viewInitCmds); "reset"
+          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(dockArgs.viewInitCmds); "reset"
           case other => other.toString
         }
-        if (DockArgs.consoleLog)
+        if (dockArgs.consoleLog)
           println(s)
         ()
       }
     }
   }
 
-  def getRMSD(docked: Molecule, molB: Molecule) = {
-    if (DockArgs.fullPathsRef.isEmpty)
+  def getRMSD(docked: Molecule, molB: Molecule, fullPathsRef: Seq[String]) = {
+    if (fullPathsRef.isEmpty)
       docked.rmsd(molB)
     else {
-      jmolPanel.openFiles(DockArgs.fullPathsRef)
-      (for (i <- DockArgs.fullPathsRef.indices) yield {
+      jmolPanel.openFiles(fullPathsRef)
+      (for (i <- fullPathsRef.indices) yield {
         val refMol = JmolMoleculeReader.read(jmolPanel, i)
         docked.rmsd(refMol)
       }).min
@@ -101,48 +101,48 @@ object DockMain {
     * Gets an instance of a docker given the name. In the future, this could be
     * enhanced to use reflection.
     */
-  def getDocker(molA: Molecule, molB: Molecule) = {
-    if (DockArgs.workers <= 1 )
-        new MultipleInitialsDocker(getInnerDocker(molA, molB), DockArgs.initAngle,
-          DockArgs.initConfigLevel, DockArgs.randomInit)
+  def getDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+    if (dockArgs.workers <= 1 )
+        new MultipleInitialsDocker(getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
+          dockArgs.initConfigLevel, dockArgs.randomInit)
     else
-      new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB), DockArgs.initAngle,
-        DockArgs.initConfigLevel, DockArgs.randomInit, DockArgs.workers)
+      new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
+        dockArgs.initConfigLevel, dockArgs.randomInit, dockArgs.workers)
   }
 
-  private def getInnerDocker(molA: Molecule, molB: Molecule) = {
-    val ffparams = getFFParams(molA, molB)
+  private def getInnerDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+    val ffparams = getFFParams(molA, molB, dockArgs)
     val scorer =
-      if (DockArgs.scorerName == "ff")
-        new ForceVectorScore(ffparams, 1.25, DockArgs.dockerName == "chain")
+      if (dockArgs.scorerName == "ff")
+        new ForceVectorScore(ffparams, 1.25, dockArgs.dockerName == "chain")
       else
-        new SurfaceDistanceScorer(DockArgs.surface)
+        new SurfaceDistanceScorer(dockArgs.surface)
 
-    DockArgs.dockerName match {
-      case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(DockArgs.surface))
-      case "ehc" => new EhcDocker(scorer, DockArgs.maxIters)
+    dockArgs.dockerName match {
+      case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(dockArgs.surface))
+      case "ehc" => new EhcDocker(scorer, dockArgs.maxIters)
       case "forcevector" => new ForceVectorDocker(ffparams)
       case "forcevectorc" => new ForceVectorConcurrentDockerDocker(ffparams)
-      case "chain" => new FFandEHC(ffparams, scorer, DockArgs.maxIters
+      case "chain" => new FFandEHC(ffparams, scorer, dockArgs.maxIters
       )
       case _ => sys.error(usage)
     }
   }
 
-  def getFFParams(molA: Molecule, molB: Molecule) = {
+  def getFFParams(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
     val params = DockingParamsHeuristic.estimate(molA, molB)
-    if (DockArgs.balanceIsSet){
-      params.geometricForceWeight = DockArgs.geometricForceWeight
-      params.electricForceWeight = DockArgs.electricForceWeight
-      params.hydrogenBondsForceWeight = DockArgs.hydrogenBondsForceWeight
-      params.bondForceWeight = DockArgs.bondForceWeight
+    if (dockArgs.balanceIsSet){
+      params.geometricForceWeight = dockArgs.geometricForceWeight
+      params.electricForceWeight = dockArgs.electricForceWeight
+      params.hydrogenBondsForceWeight = dockArgs.hydrogenBondsForceWeight
+      params.bondForceWeight = dockArgs.bondForceWeight
     }
-    if (DockArgs.surfaceIsSet)
-      params.surface = DockArgs.surface
-    if (DockArgs.permeabilityIsSet)
-      params.permeability = DockArgs.permeability
-    if (DockArgs.ignoreHydrogensIsSet)
-      params.ignoreAHydrogens = DockArgs.ignoreAHydrogens
+    if (dockArgs.surfaceIsSet)
+      params.surface = dockArgs.surface
+    if (dockArgs.permeabilityIsSet)
+      params.permeability = dockArgs.permeability
+    if (dockArgs.ignoreHydrogensIsSet)
+      params.ignoreAHydrogens = dockArgs.ignoreAHydrogens
     params
   }
 
@@ -151,43 +151,44 @@ object DockMain {
     * These commands are then run each time the JMOL view is reset.
     * If the file does not exist or cannot be read, returns an empty list.
     */
-  def getViewInitCmds = {
+  def getViewInitCmds(dockArgs: DockArgs) = {
     try {
-      scala.io.Source.fromFile(DockArgs.dir + "viewinit.txt").getLines.toSeq
+      scala.io.Source.fromFile(dockArgs.dir + "viewinit.txt").getLines.toSeq
     } catch {
       case e: Exception => List[String]()
     }
   }
 
   def parseArgs(args: Array[String]) = {
+    val dockArgs = new DockArgs
     var i = 0
 
     try {
       while (i < args.length) {
         args(i).trim match {
           case "" => i += 1
-          case "-a" => DockArgs.pathA = args(i + 1);i += 2
-          case "-b" => DockArgs.pathB = args(i + 1);i += 2
-          case "-out" => DockArgs.pathOut = args(i + 1); i += 2
-          case "-dir" => DockArgs.dir = args(i+1); i += 2
-          case "-workers" => DockArgs.workers = args(i+1).toInt; i += 2; Profiler.setWorkers(DockArgs.workers + 8)
-          case "-ref" => DockArgs.pathRefs = args(i+1); i += 2
-          case "--randominit" => DockArgs.randomInit = true; i += 1
-          case "-initangle" => DockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
-          case "-initlevel" => DockArgs.initConfigLevel = args(i + 1).toInt; i += 2
-          case "-docker" => DockArgs.dockerName = args(i + 1); i += 2
-          case "--consolelog" => DockArgs.consoleLog = true; i += 1
-          case "-surface" => DockArgs.surface = args(i + 1).toDouble; DockArgs.surfaceIsSet = true; i += 2
+          case "-a" => dockArgs.pathA = args(i + 1);i += 2
+          case "-b" => dockArgs.pathB = args(i + 1);i += 2
+          case "-out" => dockArgs.pathOut = args(i + 1); i += 2
+          case "-dir" => dockArgs.dir = args(i+1); i += 2
+          case "-workers" => dockArgs.workers = args(i+1).toInt; i += 2; Profiler.setWorkers(dockArgs.workers + 8)
+          case "-ref" => dockArgs.pathRefs = args(i+1); i += 2
+          case "--randominit" => dockArgs.randomInit = true; i += 1
+          case "-initangle" => dockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
+          case "-initlevel" => dockArgs.initConfigLevel = args(i + 1).toInt; i += 2
+          case "-docker" => dockArgs.dockerName = args(i + 1); i += 2
+          case "--consolelog" => dockArgs.consoleLog = true; i += 1
+          case "-surface" => dockArgs.surface = args(i + 1).toDouble; dockArgs.surfaceIsSet = true; i += 2
 
           // Hill Climbing:
-          case "-maxiters" => DockArgs.maxIters = args(i+1).toInt; i+=2
-          case "-scorer" => DockArgs.scorerName = args(i + 1); i += 2
+          case "-maxiters" => dockArgs.maxIters = args(i+1).toInt; i+=2
+          case "-scorer" => dockArgs.scorerName = args(i + 1); i += 2
 
           // FF:
-          case "-threshold" => DockArgs.threshold = args(i + 1).toDouble; i += 2
-          case "-permeability" => DockArgs.permeability = args(i + 1).toDouble; DockArgs.permeabilityIsSet = true; i += 2
-          case "--ignoreAhydrogens" => DockArgs.ignoreAHydrogens = true; DockArgs.ignoreHydrogensIsSet = true; i += 1
-          case "--nogui" => DockArgs.liveGui = false; i += 1
+          case "-threshold" => dockArgs.threshold = args(i + 1).toDouble; i += 2
+          case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
+          case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
+          case "--nogui" => dockArgs.liveGui = false; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 4)
@@ -203,12 +204,12 @@ object DockMain {
               hydrogenBondsForceWeight < 0 || bondForceWeight < 0 || sum==0.0)
               sys.error(usage)
 
-            DockArgs.geometricForceWeight = atomicForceWeight / sum
-            DockArgs.electricForceWeight = electricForceWeight / sum
-            DockArgs.hydrogenBondsForceWeight = hydrogenBondsForceWeight / sum
-            DockArgs.bondForceWeight = bondForceWeight / sum
+            dockArgs.geometricForceWeight = atomicForceWeight / sum
+            dockArgs.electricForceWeight = electricForceWeight / sum
+            dockArgs.hydrogenBondsForceWeight = hydrogenBondsForceWeight / sum
+            dockArgs.bondForceWeight = bondForceWeight / sum
 
-            DockArgs.balanceIsSet = true
+            dockArgs.balanceIsSet = true
             i += 2
           case _ => sys.error(usage)
         }
@@ -216,13 +217,14 @@ object DockMain {
     }
     catch { case _:Exception => sys.error(usage) }
 
-    if (!DockArgs.valid)
+    if (!dockArgs.valid)
       sys.error(usage)
 
-    DockArgs.viewInitCmds = getViewInitCmds
+    dockArgs.viewInitCmds = getViewInitCmds(dockArgs)
+    dockArgs
   }
 
-  object DockArgs {
+  class DockArgs {
     var dir = ""
     var pathA = ""
     var pathB = ""

@@ -18,12 +18,12 @@ object Benchmarker {
     for (line <- cmds ) {
       val cmd = line.trim
       if (!cmd.startsWith("#") && !cmd.isEmpty) {
-        DockMain.parseArgs(cmd.split(" "))
+        val dockArgs = DockMain.parseArgs(cmd.split(" "))
         print(s"Line $i: ")
         Profiler.clear
         var rmsdAvg = 0.0
         for (i <- 0 until repeats) {
-          val (_, rmsd, _) = DockMain.doMainDock(DockArgs.fullPathA, DockArgs.fullPathB, DockArgs.fullPathOut)
+          val (_, rmsd, _) = DockMain.doMainDock(dockArgs)
           print(".")
           rmsdAvg += rmsd
         }
