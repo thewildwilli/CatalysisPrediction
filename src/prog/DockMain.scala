@@ -143,6 +143,8 @@ object DockMain {
       params.permeability = dockArgs.permeability
     if (dockArgs.ignoreHydrogensIsSet)
       params.ignoreAHydrogens = dockArgs.ignoreAHydrogens
+    if (dockArgs.thresholdIsSet)
+      params.threshold = dockArgs.threshold
     params
   }
 
@@ -185,7 +187,7 @@ object DockMain {
           case "-scorer" => dockArgs.scorerName = args(i + 1); i += 2
 
           // FF:
-          case "-threshold" => dockArgs.threshold = args(i + 1).toDouble; i += 2
+          case "-threshold" => dockArgs.threshold = args(i + 1).toDouble; dockArgs.thresholdIsSet = true; i += 2
           case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
           case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
           case "--nogui" => dockArgs.liveGui = false; i += 1
@@ -256,6 +258,8 @@ object DockMain {
     var ignoreHydrogensIsSet = false  // becomes true if overridden in program args
 
     var threshold = 1.0e-5
+    var thresholdIsSet = false
+
       // Force vector force balance: either all 3 set, or all 3 with default values
     var geometricForceWeight = 0.25
     var electricForceWeight = 0.25

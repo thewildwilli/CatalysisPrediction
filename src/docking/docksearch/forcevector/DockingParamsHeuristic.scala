@@ -8,9 +8,9 @@ import model.Molecule
 object DockingParamsHeuristic {
   def estimate(molA: Molecule, molB: Molecule) = {
     val result = new DockingParams()
-    result.threshold = 1.0e-2
     if (molA.atoms.size < 20) {
       // Tiny molecule
+      result.threshold = 1.0e-5
       result.surface = 0
       result.permeability = 0
       result.geometricForceWeight = 1/7.0
@@ -20,6 +20,7 @@ object DockingParamsHeuristic {
       result.ignoreAHydrogens = false
     } else if (molA.atoms.size < 300) {
       // Small molecule
+      result.threshold = 1.0e-2
       result.surface = 0
       result.permeability = 0
       result.geometricForceWeight = 1/101.0
@@ -29,6 +30,7 @@ object DockingParamsHeuristic {
       result.ignoreAHydrogens = false
     } else {
       // Large molecule
+      result.threshold = 1.0e-5
       result.surface = 1.4
       result.permeability = 0.9
       result.geometricForceWeight = 1/2.0
