@@ -66,7 +66,12 @@ class ForceVectorScore(val params: DockingParams,
           }
 
           if (params.hydrogenBondsForceWeight > 0)
-            totalHBondScore += hScore(getVectToHBondSpot(a, b, molA))// + hScore(getVectToHBondSpot(b, a, molB))
+            totalHBondScore += (
+              if (params.ignoreAHydrogens)
+                hScore(getVectToHBondSpot(b, a, molB))
+              else
+                hScore(getVectToHBondSpot(a, b, molA))
+            )
 
           if (params.bondForceWeight > 0) {
             val bondEnergy = BondEnergy(a.element, b.element)

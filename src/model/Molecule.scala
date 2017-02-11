@@ -91,16 +91,28 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     if (n != other.atoms.size) throw new Exception(s"Cannot compute RMSD of molecules of different sizes. I have ${this.atoms.size}, other has ${other.atoms.size}")
     if (n == 0) throw new Exception ("Calculating RMSD of empty molecule")
 
-    // Atoms in the two molecules may have different ids, so they are accessed by index:
+    Math.max(this.rmsdPrime(other), other.rmsdPrime(this))
+  }
+
+  private def rmsdPrime(other: Molecule) = {
+    val squaresum = (
+      for {a <- this.atoms if a.element != "H"} yield {
+        val minDist = (for {b <- other.atoms if b.element == a.element} yield a.distTo(b)).min
+        minDist * minDist
+      }
+    ).sum
+    Math.sqrt(squaresum / this.atoms.size)
+  }
+
+  private def naiveRmsd(other: Molecule) = {
     val myAtoms = this.atoms.toIndexedSeq
     val otherAtoms = other.atoms.toIndexedSeq
-
     val squaresum = (for (i <- myAtoms.indices) yield {
       val a = myAtoms(i)
       val b = otherAtoms(i)
       Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2) + Math.pow(a.z-b.z, 2)
     }).sum
-    Math.sqrt(squaresum / n)
+    Math.sqrt(squaresum / this.atoms.size)
   }
 
 

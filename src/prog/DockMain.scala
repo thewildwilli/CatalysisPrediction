@@ -42,8 +42,6 @@ object DockMain {
 
 
   def doMainDock(dockArgs: DockArgs) = {
-    //val startTime = System.currentTimeMillis()
-
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB))
     jmolPanel.execSync(
       selectModel("2.1"),
@@ -56,14 +54,14 @@ object DockMain {
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val docker = getDocker(molA, molB, dockArgs)
 
-    val chan = OneOneBuf[Any](5)
+    val chan = OneOneBuf[Any](5000)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
     (proc { dockResult = docker.dock(molA, molB.clone, chan); chan.close } ||
       showActions(chan, jmolPanel, dockArgs))()
 
     val docked = dockResult._1
     val score = dockResult._2
-    (docked, getRMSD(docked, molB, dockArgs.fullPathsRef), score)
+    (docked, getRMSD(docked, dockArgs.fullPathsRef), score)
   }
 
   def showActions(chan: ?[Any], panel: JmolPanel, dockArgs: DockArgs) = proc {
@@ -84,16 +82,12 @@ object DockMain {
     }
   }
 
-  def getRMSD(docked: Molecule, molB: Molecule, fullPathsRef: Seq[String]) = {
-    if (fullPathsRef.isEmpty)
-      docked.rmsd(molB)
-    else {
-      jmolPanel.openFiles(fullPathsRef)
-      (for (i <- fullPathsRef.indices) yield {
-        val refMol = JmolMoleculeReader.read(jmolPanel, i)
-        docked.rmsd(refMol)
-      }).min
-    }
+  def getRMSD(docked: Molecule, fullPathsRef: Seq[String]) = {
+    jmolPanel.openFiles(fullPathsRef)
+    (for (i <- fullPathsRef.indices) yield {
+      val refMol = JmolMoleculeReader.read(jmolPanel, i)
+      docked.rmsd(refMol)
+    }).min
   }
 
 
@@ -237,7 +231,7 @@ object DockMain {
     var scorerName = ""
     var consoleLog = false
     var liveGui = true
-    var initAngle = Math.toRadians(90)
+    var initAngle = Math.toRadians(90.0)
     var initConfigLevel = 0
     var randomInit = false
     var workers = 1
@@ -278,7 +272,7 @@ object DockMain {
     def fullPathOut = dir + pathOut
     def fullPathsRef : Seq[String] =
       if (pathRefs == "")
-        List[String]()
+        List[String](fullPathB)
       else
         for (p <- pathRefs.split(",")) yield dir + p.trim
   }

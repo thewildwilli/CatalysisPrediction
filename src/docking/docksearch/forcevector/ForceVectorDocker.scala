@@ -299,9 +299,10 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
       } else
         DenseVector(0.0, 0.0, 0.0)
 
-    val forceOnB = getForce(getVectToHBondSpot(atomA, atomB, molA))
-    //val forceOnA = getForce(getVectToHBondSpot(atomB, atomA, molB))
-    forceOnB //+ (-1.0 * forceOnA)
+    if (params.ignoreAHydrogens)  // if A hydrogens are ignored, at least get reverse forces
+      -1.0 * getForce(getVectToHBondSpot(atomB, atomA, molB))
+    else
+      getForce(getVectToHBondSpot(atomA, atomB, molA))
   }
 
 

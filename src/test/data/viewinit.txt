@@ -15,3 +15,6 @@ model all
 #background white
 moveTo 0 front
 #zoom 75
+
+# leave this line here so that this model remains selected and is moved by the algorithm
+select model=2.1

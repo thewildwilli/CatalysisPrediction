@@ -33,9 +33,9 @@ object DockingParamsHeuristic {
       result.threshold = 1.0e-5
       result.surface = 1.4
       result.permeability = 0.9
-      result.geometricForceWeight = 1/2.0
+      result.geometricForceWeight = 5/10.0
       result.electricForceWeight = 0.0
-      result.hydrogenBondsForceWeight = 1/2.0
+      result.hydrogenBondsForceWeight = 5/10.0
       result.bondForceWeight = 0.0
       result.ignoreAHydrogens = true
     }
