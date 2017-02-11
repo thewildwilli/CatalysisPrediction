@@ -34,7 +34,7 @@ object DockMain {
     val (docked, rmsd, _) = doMainDock(dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
-    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut))  // show original a and modified b
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut, dockArgs.fullPathB))  // show original a and modified b
     jmolPanel.execSeq(dockArgs.viewInitCmds)
     println(s"Finished with RMSD: $rmsd")
     Profiler.report
@@ -213,11 +213,11 @@ object DockMain {
 
             dockArgs.balanceIsSet = true
             i += 2
-          case _ => sys.error(usage)
+          case unknown => sys.error(s"Unknown argument: $unknown, $usage")
         }
       }
     }
-    catch { case _:Exception => sys.error(usage) }
+    catch { case e:Exception => sys.error(s"${e.getMessage}, $usage") }
 
     if (!dockArgs.valid)
       sys.error(usage)

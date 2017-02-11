@@ -300,8 +300,8 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
         DenseVector(0.0, 0.0, 0.0)
 
     val forceOnB = getForce(getVectToHBondSpot(atomA, atomB, molA))
-    val forceOnA = getForce(getVectToHBondSpot(atomB, atomA, molB))
-    forceOnB + (-1.0 * forceOnA)
+    //val forceOnA = getForce(getVectToHBondSpot(atomB, atomA, molB))
+    forceOnB //+ (-1.0 * forceOnA)
   }
 
 

@@ -10,13 +10,13 @@ object DockingParamsHeuristic {
     val result = new DockingParams()
     if (molA.atoms.size < 20) {
       // Tiny molecule
-      result.threshold = 1.0e-5
+      result.threshold = 1.0e-2
       result.surface = 0
       result.permeability = 0
-      result.geometricForceWeight = 1/7.0
-      result.electricForceWeight = 1/7.0
-      result.hydrogenBondsForceWeight = 5/7.0
-      result.bondForceWeight = 0.0
+      result.geometricForceWeight = 1/10.0
+      result.electricForceWeight = 3/10.0
+      result.hydrogenBondsForceWeight = 6/10.0
+      result.bondForceWeight = 0/7.0
       result.ignoreAHydrogens = false
     } else if (molA.atoms.size < 300) {
       // Small molecule

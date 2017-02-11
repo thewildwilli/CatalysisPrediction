@@ -1,5 +1,5 @@
 select model=1.1
-#cartoon only
+cartoon only
 #color atom partialCharge
 color silver
 
@@ -7,6 +7,9 @@ select model=2.1
 #carton only
 #color atom partialCharge
 color red
+
+select model=3.1
+color green
 
 model all
 #background white
