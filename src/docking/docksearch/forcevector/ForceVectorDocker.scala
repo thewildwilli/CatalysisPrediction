@@ -30,6 +30,8 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
   var bestWindowScore = Double.NegativeInfinity
   var currIterScore = 0.0
   var lastIterScore = Double.NegativeInfinity
+  var bestScore = 0.0
+  var bestDock: Molecule = null
 
   var done = false
   var decelerations = 0
@@ -62,6 +64,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
 
     //println(s"Docking from pos $startingPos")
     startingPos+=1
+    bestDock = molB.clone
 
     var i = 1
     while (!done){
@@ -78,7 +81,8 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
       Profiler.time("updateState") {   updateState(i, molA, molB)       }  // updates done and all other algorithm control variables
       i+=1
     }
-    (molB, currIterScore)
+    (bestDock, bestScore)
+//    (molB, currIterScore)
   }
 
   private def updateState(i: Integer, molA: Molecule, molB: Molecule)  = {
@@ -119,6 +123,10 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
           maxAngle = initialDeltaAngle
           maxTranslate = initialDeltaSpace
         }
+      }
+      if (currWindowScore > bestWindowScore){
+        bestScore = currIterScore
+        bestDock = molB.clone
       }
       //println(s"$i, score: $currWindowScore, soft: $softness, decel $decelerations, approach: $approachPhase, maxT: $maxTranslate")
       lastWindowScore = currWindowScore

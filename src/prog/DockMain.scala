@@ -31,12 +31,12 @@ object DockMain {
 
   def main(args: Array[String]): Unit = {
     val dockArgs = parseArgs(args)
-    val (docked, rmsd, _) = doMainDock(dockArgs)
+    val (docked, rmsd, score) = doMainDock(dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut, dockArgs.fullPathB))  // show original a and modified b
     jmolPanel.execSeq(dockArgs.viewInitCmds)
-    println(s"Finished with RMSD: $rmsd")
+    println(s"Finished with RMSD: $rmsd, score: $score")
     Profiler.report
   }
 
@@ -116,7 +116,6 @@ object DockMain {
       case "atompair" => new AtomPairDocker(new SurfaceDistanceScorer(dockArgs.surface))
       case "ehc" => new EhcDocker(scorer, dockArgs.maxIters)
       case "forcevector" => new ForceVectorDocker(ffparams)
-      case "forcevectorc" => new ForceVectorConcurrentDockerDocker(ffparams)
       case "chain" => new FFandEHC(ffparams, scorer, dockArgs.maxIters
       )
       case _ => sys.error(usage)

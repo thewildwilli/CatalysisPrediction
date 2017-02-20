@@ -88,7 +88,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     */
   def rmsd(other: Molecule) = {
     val n = this.atoms.size
-    if (n != other.atoms.size) throw new Exception(s"Cannot compute RMSD of molecules of different sizes. I have ${this.atoms.size}, other has ${other.atoms.size}")
+//    if (n != other.atoms.size) throw new Exception(s"Cannot compute RMSD of molecules of different sizes. I have ${this.atoms.size}, other has ${other.atoms.size}")
     if (n == 0) throw new Exception ("Calculating RMSD of empty molecule")
 
     Math.max(this.rmsdPrime(other), other.rmsdPrime(this))
@@ -96,7 +96,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
 
   private def rmsdPrime(other: Molecule) = {
     val squaresum = (
-      for {a <- this.atoms if a.element != "H"} yield {
+      for {a <- this.atoms(ignoreHydrogen = this.atoms.size > 5) } yield {
         val minDist = (for {b <- other.atoms if b.element == a.element} yield a.distTo(b)).min
         minDist * minDist
       }
