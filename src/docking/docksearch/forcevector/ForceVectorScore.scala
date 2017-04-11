@@ -94,7 +94,7 @@ class ForceVectorScore(val params: DockingParams,
         totalHBondScore * params.hydrogenBondsForceWeight +
         totalBondStrengthScore * params.bondForceWeight
     //println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
-    totalScore / (Math.min(aCount, bCount))
+    totalScore / (aCount + bCount)
   }
 
   def getAvgBondEnergy(molA: Molecule, molB: Molecule) =
