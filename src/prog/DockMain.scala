@@ -34,7 +34,7 @@ object DockMain {
     val (docked, rmsd, score) = doMainDock(dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
-    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut, dockArgs.fullPathB))  // show original a and modified b
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
     jmolPanel.execSeq(dockArgs.viewInitCmds)
     println(s"Finished with RMSD: $rmsd, score: $score")
     Profiler.report
