@@ -31,12 +31,12 @@ object DockMain {
 
   def main(args: Array[String]): Unit = {
     val dockArgs = parseArgs(args)
-    val (docked, rmsd, score) = doMainDock(dockArgs)
+    val (docked, (closestRef, rmsd), score) = doMainDock(dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
     jmolPanel.execSeq(dockArgs.viewInitCmds)
-    println(s"Finished with RMSD: $rmsd, score: $score")
+    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score")
     Profiler.report
   }
 
@@ -86,8 +86,8 @@ object DockMain {
     jmolPanel.openFiles(fullPathsRef)
     (for (i <- fullPathsRef.indices) yield {
       val refMol = JmolMoleculeReader.read(jmolPanel, i)
-      docked.rmsd(refMol)
-    }).min
+      (fullPathsRef(i), docked.rmsd(refMol))
+    }).minBy(_._2)
   }
 
 
