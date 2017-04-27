@@ -115,14 +115,11 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     Math.sqrt(squaresum / this.atoms.size)
   }
 
-
   def computeSurfaceAtoms2D() = {
     for (a <- atoms) {
       a.isSurface = atoms.count(b => (b ne a) && a.distTo(b) <= 2.16) <= 4 //ne = reference inequality. 216 is C=C bond length.
     }
   }
-
-
 
   /** Deep copy */
   override def clone = {
@@ -147,16 +144,4 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   }
 
   def JAtoms = atomMap.asJava
-
-
-  /* This is now taken from JMOL
-def computeSurfaceAtoms() = {
-  for (a <- Atoms) {
-    val pointsInSurface = Geometry.sphereOrientations(a.radius, Math.toRadians(45))
-    a.isSurface = pointsInSurface.exists(point =>
-      !Atoms.exists(other => (other ne a) && other.distTo(point) < other.radius) )
-  }
-
-}*/
-
 }
