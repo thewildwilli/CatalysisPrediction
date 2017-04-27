@@ -21,8 +21,8 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
                                        randomInitial: Boolean,
                                        val workers: Int = 8) extends Docker {
 
-  val xone = DenseVector(1.0, 0.0, 0.0)
   val initials = new GlobeInitialsGenerator(initialConfigLevel, angRad)
+
   type DockTask = (Molecule, Molecule, ![Any])
   type DockResult = (Molecule, Double)
 
