@@ -1,11 +1,10 @@
 package docking.docksearch
 
-import breeze.linalg
 import breeze.linalg._
 import docking.docksearch.initials.GlobeInitialsGenerator
-import docking.{Docker, Rotate, Translate}
+import docking.{Docker}
 import io.threadcso._
-import model.{Geometry, Molecule}
+import model.{Molecule, Rotate, Translate}
 import profiling.Profiler
 
 import scala.util.Random

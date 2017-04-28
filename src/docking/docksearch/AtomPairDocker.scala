@@ -2,10 +2,9 @@ package docking.docksearch
 
 import breeze.linalg.DenseVector
 import io.threadcso._
-
-import docking.{Docker, DockingState, Rotate, Translate}
+import docking.{Docker, DockingState}
 import docking.dockscore.Scorer
-import model.Molecule
+import model.{Molecule, Rotate, Translate}
 import opt.HillClimbing
 
 // Created by Ernesto on 23/05/2016.

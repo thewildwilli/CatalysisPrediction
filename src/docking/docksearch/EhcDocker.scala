@@ -4,10 +4,8 @@ import breeze.linalg.DenseVector
 import docking._
 import docking.dockscore.Scorer
 import io.threadcso._
-import model.Molecule
-import opt.{Action, EnhHillClimbing, HillClimbing}
-
-import scala.collection.mutable.ListBuffer
+import model.{Molecule, Rotate, Translate}
+import opt.{EnhHillClimbing}
 
 /**   This docker places molecule B in six initial positions with respect
   *   to molecule A: to the right, left, on the front, on the back, over, under.

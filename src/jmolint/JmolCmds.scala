@@ -1,6 +1,6 @@
 package jmolint
 
-import docking._
+import model.{Rotate, Translate}
 import opt.Action
 
 object JmolCmds {

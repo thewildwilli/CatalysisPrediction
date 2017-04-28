@@ -4,8 +4,8 @@ import breeze.linalg.DenseVector
 import docking._
 import docking.dockscore.Scorer
 import io.threadcso._
-import model.Molecule
-import opt.{Action, EnhHillClimbing, HillClimbing}
+import model.{Molecule, Rotate, Translate}
+import opt.{EnhHillClimbing}
 
 import scala.collection.mutable.ListBuffer
 

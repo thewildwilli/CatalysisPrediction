@@ -2,7 +2,7 @@ package docking.docksearch.initials
 import io.threadcso.!
 import model.{Geometry, Molecule}
 
-import docking.{Rotate, Translate}
+import model.{Rotate, Translate}
 import breeze.linalg
 
 class GlobeInitialsGenerator(initialConfigLevel: Integer,
