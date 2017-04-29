@@ -38,8 +38,7 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
   }
 
   private def pushTasks(tasksChan: ![DockTask], molA: Molecule, molB: Molecule, log: ![Any]) = proc {
-    val radius = molA.getRadius + molB.getRadius;
-    for (transform <- initials(molB, radius)) {
+    for (transform <- initials(molA, molB)) {
       tasksChan!(molA, molB, transform, log)
     }
     tasksChan.closeOut
