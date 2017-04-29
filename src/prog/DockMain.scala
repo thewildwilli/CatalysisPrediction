@@ -96,10 +96,6 @@ object DockMain {
     * enhanced to use reflection.
     */
   def getDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
-    if (dockArgs.workers <= 1 )
-        new MultipleInitialsDocker(getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
-          dockArgs.initConfigLevel, dockArgs.randomInit)
-    else
       new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
         dockArgs.initConfigLevel, dockArgs.randomInit, dockArgs.workers)
   }

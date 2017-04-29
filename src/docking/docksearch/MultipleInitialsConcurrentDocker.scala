@@ -38,8 +38,8 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
     val resultsChan = N2N[DockResult](workers, 1, "resultschan")
     var result = (null.asInstanceOf[Molecule], 0.0)
     val workerProcs = || (for (i <- 0 until workers) yield doTasks(tasksChan, resultsChan))
-    val system = (pushTasks(tasksChan, molA, molB, log) || workerProcs ||
-      proc { result = collectResults(resultsChan) })
+    val system = pushTasks(tasksChan, molA, molB, log) || workerProcs ||
+      proc { result = collectResults(resultsChan) }
     Profiler.time("dock") { system() }
     result
   }
@@ -63,7 +63,7 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
       transform.applyTo(bCopy)
 
       val docker = createDocker()
-      val result = docker.dock(molA, molB, log)
+      val result = docker.dock(molA, bCopy, log)
       resultsChan!result
     }
     tasksChan.closeIn
