@@ -7,7 +7,7 @@ import io.Mol2Writer
 import io.threadcso._
 import jmolint.JmolCmds._
 import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
-import model.Molecule
+import model.{Geometry, Molecule, Rotate}
 import opt.Action
 import profiling.Profiler
 
@@ -53,8 +53,11 @@ object DockMain {
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val docker = getDocker(molA, molB, dockArgs)
-
     val chan = OneOneBuf[Any](5000)
+
+    if (dockArgs.randomInit)
+      doRandomRotation(molB, chan)
+
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
     (proc { dockResult = docker.dock(molA, molB.clone, chan); chan.close } ||
       showActions(chan, jmolPanel, dockArgs))()
@@ -97,7 +100,7 @@ object DockMain {
     */
   def getDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
       new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
-        dockArgs.initConfigLevel, dockArgs.randomInit, dockArgs.workers)
+        dockArgs.initConfigLevel, dockArgs.workers)
   }
 
   private def getInnerDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
@@ -213,6 +216,12 @@ object DockMain {
 
     dockArgs.viewInitCmds = getViewInitCmds(dockArgs)
     dockArgs
+  }
+
+  private def doRandomRotation(m: Molecule, log: ![Any]): Unit = {
+    val (axis, angle) = Geometry.randomRotation
+    m.rotate(m.getGeometricCentre, axis, angle)
+    log! new Rotate(m.getGeometricCentre, axis, angle)
   }
 
   class DockArgs {

@@ -2,9 +2,9 @@ package docking.docksearch
 
 import breeze.linalg._
 import docking.docksearch.initials.GlobeInitialsGenerator
-import docking.{Docker}
+import docking.Docker
 import io.threadcso._
-import model.{Molecule, Rotate, Translate, Transform}
+import model._
 import profiling.Profiler
 
 import scala.util.Random
@@ -17,7 +17,6 @@ import scala.util.Random
 class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
                                        angRad: Double,
                                        initialConfigLevel: Integer,
-                                       randomInitial: Boolean,
                                        val workers: Int = 8) extends Docker {
 
   val initials = new GlobeInitialsGenerator(initialConfigLevel, angRad)
@@ -29,8 +28,6 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
     val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
     log!new Translate(centreVect)
     molB.translate(centreVect)
-    if (randomInitial)
-      doRandomRotation(molB, log)
 
     log!"save"
 
@@ -82,12 +79,5 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
     }
     resultsChan.closeIn
     (bestDock, bestScore)
-  }
-
-  private def doRandomRotation(m: Molecule, log: ![Any]): Unit = {
-    val axis = DenseVector(Random.nextDouble(), Random.nextDouble(), Random.nextDouble())
-    val angle = Random.nextDouble() * 2 * Math.PI
-    m.rotate(m.getGeometricCentre, axis, angle)
-    log! new Rotate(m.getGeometricCentre, axis, angle)
   }
 }

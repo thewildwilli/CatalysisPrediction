@@ -3,6 +3,8 @@ package model
 import breeze.linalg
 import breeze.linalg._
 
+import scala.util.Random
+
 /**
   *   Provides general 3D geometry routines.
   *   Transformations are expressed in 4x4 matrices.
@@ -121,6 +123,11 @@ object Geometry {
   def distToLine (x1: DenseVector[Double], x2: DenseVector[Double], p: DenseVector[Double]) = {
     norm(linalg.cross(p - x1, p - x2)) / norm(x2-x1)
   }
+
+  def randomRotation: (DenseVector[Double], Double) = (
+    DenseVector(Random.nextDouble(), Random.nextDouble(), Random.nextDouble()),
+    Random.nextDouble() * 2 * Math.PI
+  )
 
 
 
