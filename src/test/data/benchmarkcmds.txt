@@ -11,10 +11,10 @@
 #-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -workers 8
 
 #   -- Complementary Hexamers --
-# -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector --randominit -workers 8
-#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 --randominit -workers 8
-#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -workers 8
-#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -workers 8
+# -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 8
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 8
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 8
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 8
 
 #   -- 3HTB --
 -a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 8
