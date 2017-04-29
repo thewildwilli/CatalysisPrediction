@@ -1,6 +1,6 @@
 package docking.docksearch
 
-import docking.docksearch.initials.GlobeInitialsGenerator
+import docking.initials.GlobeInitialsGenerator
 import docking.Docker
 import io.threadcso._
 import model._

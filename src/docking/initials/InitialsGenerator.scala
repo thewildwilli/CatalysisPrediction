@@ -1,4 +1,4 @@
-package docking.docksearch.initials
+package docking.initials
 
 import model.{Molecule, Transform}
 
