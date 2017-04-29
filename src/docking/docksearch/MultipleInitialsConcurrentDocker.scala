@@ -1,14 +1,10 @@
 package docking.docksearch
 
-import breeze.linalg._
 import docking.docksearch.initials.GlobeInitialsGenerator
 import docking.Docker
 import io.threadcso._
 import model._
 import profiling.Profiler
-
-import scala.util.Random
-
 
 /**
   * @param initialConfigLevel: 0 => only translation, 1 => orientations in 2D, 2 => orientations in 3D.
