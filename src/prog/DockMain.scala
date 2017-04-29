@@ -70,7 +70,7 @@ object DockMain {
       if (dockArgs.liveGui && dockArgs.workers <= 1) {
         val s = msg match
         {
-          case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
+          case a: Action => val cmds = JmolCmds.cmds(a); panel.exec(cmds:_*); cmds
           case "save" => panel.exec(JmolCmds.save); "save"
           case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(dockArgs.viewInitCmds); "reset"
           case other => other.toString

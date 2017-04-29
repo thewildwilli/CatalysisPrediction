@@ -30,9 +30,16 @@ class MultipleInitialsDocker(val docker: Docker, angRad: Double,
     log!"save"
 
     val radius = molA.getRadius + molB.getRadius
-    val best = initials(molB, radius, log, bCopy => {
-      Profiler.time("dock") {  docker.dock(molA, bCopy, log) }
+    val best = (for (transform <- initials(molB, radius)) yield {
+      log ! "reset"
+      log ! transform
+      val bCopy = molB.clone
+      transform.applyTo(bCopy)
+      Profiler.time("dock") {
+        docker.dock(molA, bCopy, log)
+      }
     }).maxBy(p => p._2)
+
     best
   }
 

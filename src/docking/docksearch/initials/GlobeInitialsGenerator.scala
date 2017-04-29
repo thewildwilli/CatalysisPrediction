@@ -1,16 +1,13 @@
 package docking.docksearch.initials
-import io.threadcso.!
-import model.{Geometry, Molecule}
-
-import model.{Rotate, Translate}
+import model._
 import breeze.linalg
 
 class GlobeInitialsGenerator(initialConfigLevel: Integer,
                              angRad: Double) extends InitialsGenerator{
 
-  override def apply[A](m: Molecule, radius: Double, log: ![Any], cmd: Molecule => A) = {
+  override def apply(m: Molecule, radius: Double) = {
     val xone = linalg.DenseVector(1.0, 0.0, 0.0)
-    var l = List[A]()
+    var result = List[Transform]()
     val orientations = Geometry.sphereOrientations(1, angRad)
     for (pos <- orientations) {
       var firstOrientation = true
@@ -21,25 +18,18 @@ class GlobeInitialsGenerator(initialConfigLevel: Integer,
              if initialConfigLevel >= 2 || first3dRotation ) {
           first3dRotation = false
 
-          log ! "reset"
-          val bCopy = m.clone
-          bCopy.translate(pos * radius)
-          log ! new Translate(pos * radius)
-
-          // rotate to the orientation:
+          val translateVector = pos * radius
+          val newCentre = m.getGeometricCentre + translateVector    // centre after translation
           val axis = linalg.cross(o, xone)
           val firstAngle = Math.asin(linalg.norm(axis))
-          bCopy.rotate(bCopy.getGeometricCentre, axis, firstAngle)
-          log ! new Rotate(bCopy.getGeometricCentre, axis, firstAngle)
-
-          // rotate on the axis of the orientation
-          bCopy.rotate(bCopy.getGeometricCentre, o, secondAngle)
-          log ! new Rotate(bCopy.getGeometricCentre, o, secondAngle)
-
-          l ::= cmd(bCopy)
+          result ::= new MultiTransform(
+            new Translate(translateVector),                             // translate out
+            new Rotate(newCentre, axis, firstAngle),  // rotate to the orientation:
+            new Rotate(newCentre, o, secondAngle)     // rotate on the axis of the orientation
+          )
         }
       }
     }
-    l
+    result
   }
 }

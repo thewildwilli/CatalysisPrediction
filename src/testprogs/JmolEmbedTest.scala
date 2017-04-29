@@ -20,14 +20,10 @@ object JmolEmbedTest {
     repeat {
       val l = chan?
       val s = l match {
-        case a: Action => val cmd = JmolCmds.cmd(a); panel.exec(cmd); cmd
+        case a: Action => val cmds = JmolCmds.cmds(a); panel.exec(cmds:_*); cmds
         case d: DockingState => s"score: ${scorer.score(d)}"
         case other => other.toString
       }
-
-      //println(s)
-      //sleep(Sec/10)
-      //readLine()
       ()
     }
   }

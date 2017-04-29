@@ -4,7 +4,7 @@ import breeze.linalg._
 import docking.docksearch.initials.GlobeInitialsGenerator
 import docking.{Docker}
 import io.threadcso._
-import model.{Molecule, Rotate, Translate}
+import model.{Molecule, Rotate, Translate, Transform}
 import profiling.Profiler
 
 import scala.util.Random
@@ -22,7 +22,7 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
 
   val initials = new GlobeInitialsGenerator(initialConfigLevel, angRad)
 
-  type DockTask = (Molecule, Molecule, ![Any])
+  type DockTask = (Molecule, Molecule, Transform, ![Any])
   type DockResult = (Molecule, Double)
 
   override def dock(molA: Molecule, molB: Molecule, log: ![Any]): (Molecule, Double) = {
@@ -46,13 +46,22 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
 
   private def pushTasks(tasksChan: ![DockTask], molA: Molecule, molB: Molecule, log: ![Any]) = proc {
     val radius = molA.getRadius + molB.getRadius;
-    initials(molB, radius, log, bCopy => tasksChan!(molA, bCopy, log))
+    for (transform <- initials(molB, radius)) {
+      tasksChan!(molA, molB, transform, log)
+    }
     tasksChan.closeOut
   }
 
   private def doTasks(tasksChan: ?[DockTask], resultsChan: ![DockResult]) = proc {
     repeat {
-      val (molA, molB, log) = tasksChan?;
+      val (molA, molB, transform, log) = tasksChan?;
+
+      log ! "reset"
+      log ! transform
+
+      val bCopy = molB.clone
+      transform.applyTo(bCopy)
+
       val docker = createDocker()
       val result = docker.dock(molA, molB, log)
       resultsChan!result

@@ -1,8 +1,7 @@
 package docking.docksearch.initials
 
-import io.threadcso.!
-import model.Molecule
+import model.{Molecule, Transform}
 
 trait InitialsGenerator {
-  def apply[A](m: Molecule, radius: Double, log: ![Any], cmd: Molecule => A): Seq[A]
+  def apply(m: Molecule, radius: Double): Seq[Transform]
 }

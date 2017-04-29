@@ -30,3 +30,9 @@ class Rotate(val c: DenseVector[Double], val axis: DenseVector[Double],
 
   override def applyTo(m: Molecule): Unit = m.rotate(c, axis, angRad)
 }
+
+class MultiTransform(val transforms: Transform*) extends Transform {
+  override def applyTo(m: Molecule): Unit = {
+    for (t <- transforms) t.applyTo(m)
+  }
+}
