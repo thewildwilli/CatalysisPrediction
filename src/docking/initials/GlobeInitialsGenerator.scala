@@ -41,7 +41,7 @@ class GlobeInitialsGenerator(initialConfigLevel: Integer,
           val bToA = a.coords - b.coords
           val approach = new Translate(bToA - bToA * distance / norm(bToA))
 
-          result ::= new MultiTransform((transform.transforms :+ approach):_*)
+          result ::= new MultiTransform(transform.transforms :+ approach :_*)
         }
       }
     }
