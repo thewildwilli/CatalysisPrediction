@@ -24,7 +24,8 @@ object DockMain {
     " [-surface s] " +
     " [-permeability p]" +
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
-    " [-threshold t] "
+    " [-threshold t] " +
+    " [--pdbAddHydrogens] "
 
   val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
@@ -42,7 +43,7 @@ object DockMain {
 
 
   def doMainDock(dockArgs: DockArgs) = {
-    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB))
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB), dockArgs.pdbAddHydrogens)
     jmolPanel.execSync(
       selectModel("2.1"),
       setLog(0),
@@ -173,6 +174,7 @@ object DockMain {
           case "-docker" => dockArgs.dockerName = args(i + 1); i += 2
           case "--consolelog" => dockArgs.consoleLog = true; i += 1
           case "-surface" => dockArgs.surface = args(i + 1).toDouble; dockArgs.surfaceIsSet = true; i += 2
+          case "--pdbAddHydrogens" => dockArgs.pdbAddHydrogens = true; i += 1
 
           // Hill Climbing:
           case "-maxiters" => dockArgs.maxIters = args(i+1).toInt; i+=2
@@ -241,6 +243,7 @@ object DockMain {
     var workers = 1
 
     var viewInitCmds = Seq[String]()
+    var pdbAddHydrogens = false
 
     // Hill Climbing specific
     var maxIters = Int.MaxValue - 1

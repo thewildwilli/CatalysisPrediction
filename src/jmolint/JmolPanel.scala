@@ -36,7 +36,7 @@ class JmolPanel extends JPanel {
     while (viewer.getScriptQueueInfo()) Thread.sleep(10)
   }
 
-  def openFiles(paths: Seq[String], pdbAddHydrogens: Boolean = true) {
+  def openFiles(paths: Seq[String], pdbAddHydrogens: Boolean = false) {
     execSync("zap")
     execSync(s"set pdbAddHydrogens $pdbAddHydrogens")
     execSync(JmolCmds.loadFiles(paths))
