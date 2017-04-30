@@ -124,9 +124,10 @@ object Geometry {
     norm(linalg.cross(p - x1, p - x2)) / norm(x2-x1)
   }
 
-  def randomRotation: (DenseVector[Double], Double) = (
-    DenseVector(Random.nextDouble(), Random.nextDouble(), Random.nextDouble()),
-    Random.nextDouble() * 2 * Math.PI
+  /** Gets a pair with a random axis (vector) and a random angle (Double) */
+  def randomAxisAndAngle: (DenseVector[Double], Double) = (
+    DenseVector(Random.nextDouble(), Random.nextDouble(), Random.nextDouble()), // axis
+    Random.nextDouble() * 2 * Math.PI                                           // angle
   )
 
 

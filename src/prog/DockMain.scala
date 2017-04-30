@@ -221,7 +221,7 @@ object DockMain {
   }
 
   private def doRandomRotation(m: Molecule, log: ![Any]): Unit = {
-    val (axis, angle) = Geometry.randomRotation
+    val (axis, angle) = Geometry.randomAxisAndAngle
     m.rotate(m.getGeometricCentre, axis, angle)
     log! new Rotate(m.getGeometricCentre, axis, angle)
   }
