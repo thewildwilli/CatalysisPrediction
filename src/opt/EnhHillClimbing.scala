@@ -1,7 +1,6 @@
 package opt
 
-import docking.Decelerating
-import io.threadcso._
+import docking.{DockLog}
 
 // Created by Ernesto on 23/05/2016.
 object EnhHillClimbing{
@@ -12,7 +11,7 @@ object EnhHillClimbing{
                   decelerate: () => Unit,
                   scoring: S => Double,
                   maxIters: Int,
-                  log: ![Any]): S = {
+                  log: DockLog): S = {
 
     var currState = init
     var currScore = Double.NegativeInfinity
@@ -36,10 +35,8 @@ object EnhHillClimbing{
         }
       }
 
-      if (log != null){
-        log!bestAction
-        log!bestNeighbour
-      }
+      log.action(bestAction)
+      log.other(bestNeighbour)
 
       if (bestNeighbourScore < currScore) { // reached local maximum and now going down
         if (downCount > maxDown)

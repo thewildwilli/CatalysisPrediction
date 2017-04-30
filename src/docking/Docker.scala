@@ -1,9 +1,6 @@
 package docking
 
-import docking.dockscore.Scorer
-import io.threadcso._
 import model.Molecule
-import opt.Action
 
 trait Docker {
   /**
@@ -13,5 +10,5 @@ trait Docker {
     * @param log
     * @return
     */
-  def dock(molA: Molecule, molB: Molecule, log: ![Any]): (Molecule, Double)
+  def dock(molA: Molecule, molB: Molecule, log: DockLog): (Molecule, Double)
 }

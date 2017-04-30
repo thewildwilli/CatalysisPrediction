@@ -3,7 +3,6 @@ package docking.docksearch
 import breeze.linalg.DenseVector
 import docking._
 import docking.dockscore.Scorer
-import io.threadcso._
 import model.{Molecule, Rotate, Translate}
 import opt.{EnhHillClimbing}
 
@@ -16,7 +15,7 @@ class EhcDocker(val scorer: Scorer, val maxIters: Int) extends Docker {
   var InitialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   var InitialDeltaSpace = 1.0
 
-  override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
+  override def dock(molA: Molecule, molB: Molecule, log: DockLog) = {
     var deltaAngle = InitialDeltaAngle
     var deltaSpace = InitialDeltaSpace
 

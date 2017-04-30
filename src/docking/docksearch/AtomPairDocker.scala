@@ -1,8 +1,7 @@
 package docking.docksearch
 
 import breeze.linalg.DenseVector
-import io.threadcso._
-import docking.{Docker, DockingState}
+import docking.{DockLog, Docker, DockingState}
 import docking.dockscore.Scorer
 import model.{Molecule, Rotate, Translate}
 import opt.HillClimbing
@@ -11,7 +10,7 @@ import opt.HillClimbing
 class AtomPairDocker(val scorer: Scorer) extends Docker {
   final val DeltaAngle = Math.toRadians(20) // 20 degrees in radians
 
-  def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
+  def dock(molA: Molecule, molB: Molecule, log: DockLog) = {
     var maxScore = Double.NegativeInfinity
     var bestMatch = null.asInstanceOf[Molecule]
     var i=0
@@ -30,13 +29,13 @@ class AtomPairDocker(val scorer: Scorer) extends Docker {
   }
 
   private def dockPair(molA: Molecule, x: Int, molB: Molecule, y: Int,
-                       scorer: Scorer, log: ![Any]) = {
-    if (log!=null)log!"reset" // let know that we are starting again from molA and molB
+                       scorer: Scorer, log: DockLog) = {
+    log.reset
 
     //    translate molB so that the pair (atomA, atomB) overlaps:
     val t = new Translate(molA(x).coords - molB(y).coords)
     val initState = DockingState.transition(new DockingState(molA, molB), t)
-    if(log!=null)log!t
+    log.action(t)
 
     //    call hill climbing - neigbouring states are rotations
     HillClimbing.optimize[DockingState](initState, (s) => {
@@ -53,13 +52,13 @@ class AtomPairDocker(val scorer: Scorer) extends Docker {
   }
 
   private def dockPair2D(molA: Molecule, x: Int, molB: Molecule, y: Int,
-                         scorer: Scorer, log: ![Any]) = {
-    if (log!=null)log!"reset" // let know that we are starting again from molA and molB
+                         scorer: Scorer, log: DockLog) = {
+    log.reset
 
     //    translate molB so that the pair (atomA, atomB) overlaps:
     val t = new Translate(molA(x).coords - molB(y).coords)
     val initState = DockingState.transition(new DockingState(molA, molB), t)
-    if(log!=null)log!t
+    log.action(t)
 
     //    call hill climbing - neigbouring states are rotations
     HillClimbing.optimize[DockingState](initState, (s) => {

@@ -1,9 +1,7 @@
 package docking.docksearch
 
-import io.threadcso._
-
 import breeze.linalg.DenseVector
-import docking.{Docker, DockingState}
+import docking.{DockLog, Docker, DockingState}
 import docking.dockscore.Scorer
 import model.{Molecule, Rotate, Translate}
 import opt.HillClimbing
@@ -15,14 +13,14 @@ class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
   final val DeltaAngle = Math.toRadians(20) // 20 degrees in radians
   final val DeltaSpace = 0.1 // Angstrongs
 
-  def dock(molA: Molecule, molB: Molecule, log: ![Any] = null) = {
+  def dock(molA: Molecule, molB: Molecule, log: DockLog) = {
     var maxScore = Double.NegativeInfinity
     var bestMatch = null.asInstanceOf[Molecule]
     var i=0
 
     for (x <- molA.atoms; y <- molB.atoms) {
       if (molA(x.id).isSurface && molB(y.id).isSurface) {
-        val optimized = dockPair(molA, x.id, molB, y.id, scorer)
+        val optimized = dockPair(molA, x.id, molB, y.id, scorer, log)
         val score = scorer.score(optimized)
         if (score > maxScore) {
           maxScore = score
@@ -38,7 +36,8 @@ class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
     (bestMatch, maxScore)
   }
 
-  private def dockPair2D(molA: Molecule, x: Int, molB: Molecule, y: Int, scorer: Scorer) = {
+  private def dockPair2D(molA: Molecule, x: Int, molB: Molecule, y: Int, scorer: Scorer,
+                         log: DockLog) = {
     //    translate molB so that the pair (atomA, atomB) overlaps
     molB.translate(molA(x).coords - molB(y).coords)
 
@@ -57,10 +56,11 @@ class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
         new Translate(DenseVector(0.0, DeltaSpace, 0.0)),                  // forward translation on Y axis
         new Translate(DenseVector(0.0, -DeltaSpace, 0.0))                  // backward translation on Y axis
       )
-    }, DockingState.transition, scorer.score, 50)
+    }, DockingState.transition, scorer.score, 50, log)
   }
 
-  private def dockPair(molA: Molecule, x: Int, molB: Molecule, y: Int, scorer: Scorer) = {
+  private def dockPair(molA: Molecule, x: Int, molB: Molecule, y: Int, scorer: Scorer,
+                       log: DockLog) = {
     //    translate molB so that the pair (atomA, atomB) overlaps
     molB.translate(molA(x).coords - molB(y).coords)
 
@@ -85,6 +85,6 @@ class SurfaceAtomPairsWithTranslationDocker(val scorer: Scorer) extends Docker {
         new Translate(DenseVector(0.0, 0.0, DeltaSpace)),                  // forward translation on Y axis
         new Translate(DenseVector(0.0, 0.0, -DeltaSpace))                  // backward translation on Y axis
       )
-    }, DockingState.transition, scorer.score, 50)
+    }, DockingState.transition, scorer.score, 50, log)
   }
 }

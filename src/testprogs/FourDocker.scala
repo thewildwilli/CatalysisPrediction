@@ -1,13 +1,12 @@
 package testprogs
 
 // Created by Ernesto on 27/05/2016.
-import docking.Docker
+import docking.{DockLog, Docker}
 import docking.dockscore.SurfaceDistanceScorer
 import docking.dockscore.Scorer
 import docking.docksearch.FourInitialsDocker2D
 import model.Molecule
 import io._
-import io.threadcso._
 
 object FourDocker {
   def main(args: Array[String]) {
@@ -18,7 +17,7 @@ object FourDocker {
     val scorer: Scorer = new SurfaceDistanceScorer(0)
     val docker = new FourInitialsDocker2D(scorer)
     System.out.println(String.format("docking with docker %s, scorer %s ", docker.getClass.getName, scorer.toString))
-    val finalState: Tuple2[Molecule, Double] = docker.dock(molA, molB, null)
+    val finalState: Tuple2[Molecule, Double] = docker.dock(molA, molB, new DockLog(null, false))
     System.out.println("Final score: " + finalState._2)
     val molBDocked: Molecule = finalState._1
     // Now create a molecule with both A's and B's atoms

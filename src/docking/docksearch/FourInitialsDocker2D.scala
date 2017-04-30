@@ -3,7 +3,6 @@ package docking.docksearch
 import breeze.linalg.DenseVector
 import docking._
 import docking.dockscore.Scorer
-import io.threadcso._
 import model.{Molecule, Rotate, Translate}
 import opt.{EnhHillClimbing}
 
@@ -16,7 +15,7 @@ class FourInitialsDocker2D(val scorer: Scorer) extends Docker {
   var InitialDeltaAngle = Math.toRadians(20) // 20 degrees in radians
   var InitialDeltaSpace = 1.0
 
-  def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
+  def dock(molA: Molecule, molB: Molecule, log: DockLog) = {
     val aRadius = molA.getRadius
     val bRadius = molB.getRadius
 
@@ -32,13 +31,13 @@ class FourInitialsDocker2D(val scorer: Scorer) extends Docker {
   }
 
   private def performDock(molA: Molecule, molB: Molecule, startPos: DenseVector[Double],
-                          scorer: Scorer, log: ![Any]): DockingState = {
-    if (log != null) log!"reset" // let know that we are starting again from molA and molB
+                          scorer: Scorer, log: DockLog): DockingState = {
+    log.reset
 
     // move molB to its starting position
     val t = new Translate(startPos)
     val initState = DockingState.transition(new DockingState(molA, molB), t)
-    if (log != null) log!t
+    log.action(t)
 
     var deltaAngle = InitialDeltaAngle
     var deltaSpace = InitialDeltaSpace

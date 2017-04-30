@@ -3,7 +3,6 @@ package docking.docksearch.forcevector
 import breeze.linalg
 import breeze.linalg._
 import docking._
-import io.threadcso._
 import model._
 import profiling.Profiler
 import HBond._
@@ -45,7 +44,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
   /**  Docks b into a from b's initial position and orientation, using force vectors.
     *   Try to minimize score
     */
-  override def dock(molA: Molecule, molB: Molecule, log: ![Any]) = {
+  override def dock(molA: Molecule, molB: Molecule, log: DockLog) = {
     maxAngle = initialDeltaAngle
     maxTranslate = initialDeltaSpace
     currWindowScore = 0.0
@@ -72,11 +71,11 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
 
       val (translation, _) = Profiler.time("getTranslation") { getTranslation(forces) }
       Profiler.time("translate") { molB.translate(translation) }
-      log!new Translate(translation)
+      log.action(new Translate(translation))
 
       val (axis, angle) = Profiler.time("getRotation") {  getRotation(molB.getGeometricCentre, forces) }
       Profiler.time("rotate") {  molB.rotate(molB.getGeometricCentre, axis, angle)}
-      log!new Rotate(molB.getGeometricCentre, axis, angle)
+      log.action(new Rotate(molB.getGeometricCentre, axis, angle))
 
       Profiler.time("updateState") {   updateState(i, molA, molB)       }  // updates done and all other algorithm control variables
       i+=1

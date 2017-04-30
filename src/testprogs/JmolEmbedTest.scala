@@ -49,7 +49,7 @@ object JmolEmbedTest {
 
     val chan = OneOne[Any]
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
-    (proc { dockResult = docker.dock(molA, molB, chan); chan.close } ||
+    (proc { dockResult = docker.dock(molA, molB, new DockLog(chan)); chan.close } ||
       showActions(chan, jmolPanel, scorer))()
     val docked = dockResult._1
     val score = dockResult._2

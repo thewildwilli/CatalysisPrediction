@@ -1,6 +1,6 @@
 package opt
 
-import io.threadcso._
+import docking.DockLog
 
 // Created by Ernesto on 23/05/2016.
 object HillClimbing{
@@ -9,7 +9,7 @@ object HillClimbing{
                            transition: (S, Action) => S,
                            scoring: S => Double,
                            maxIters: Int,
-                           actionsOut: ![Action] = null): S = {
+                           log: DockLog): S = {
     var bestState = init
     var bestScore = Double.NegativeInfinity
 
@@ -32,7 +32,7 @@ object HillClimbing{
 
       bestState = bestNeighbour             // move to best neighbour
       bestScore = bestNeighbourScore
-      if (actionsOut != null) actionsOut!bestAction // log actions chosen
+      log.action(bestAction)
     }
     bestState
   }

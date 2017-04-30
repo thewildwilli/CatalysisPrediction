@@ -1,7 +1,7 @@
 package docking.docksearch
 
 import docking.initials.InitialsGenerator
-import docking.Docker
+import docking.{DockLog, Docker}
 import io.threadcso._
 import model._
 import profiling.Profiler
@@ -11,15 +11,15 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
                                        val initials: InitialsGenerator,
                                        val workers: Int = 8) extends Docker {
 
-  type DockTask = (Molecule, Molecule, Transform, ![Any])
+  type DockTask = (Molecule, Molecule, Transform, DockLog)
   type DockResult = (Molecule, Double)
 
-  override def dock(molA: Molecule, molB: Molecule, log: ![Any]): (Molecule, Double) = {
-    val centreVect = molA.getGeometricCentre - molB.getGeometricCentre
-    log!new Translate(centreVect)
-    molB.translate(centreVect)
+  override def dock(molA: Molecule, molB: Molecule, log: DockLog): (Molecule, Double) = {
+    val translateCentre = new Translate(molA.getGeometricCentre - molB.getGeometricCentre)
+    translateCentre.applyTo(molB)
+    log.action(translateCentre)
 
-    log!"save"
+    log.save
 
     val tasksChan = N2N[DockTask](1, workers, "taskschan")
     val resultsChan = N2N[DockResult](workers, 1, "resultschan")
@@ -31,7 +31,7 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
     result
   }
 
-  private def pushTasks(tasksChan: ![DockTask], molA: Molecule, molB: Molecule, log: ![Any]) = proc {
+  private def pushTasks(tasksChan: ![DockTask], molA: Molecule, molB: Molecule, log: DockLog) = proc {
     for (transform <- initials(molA, molB)) {
       tasksChan!(molA, molB, transform, log)
     }
@@ -42,8 +42,8 @@ class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
     repeat {
       val (molA, molB, transform, log) = tasksChan?;
 
-      log ! "reset"
-      log ! transform
+      log.reset
+      log.action(transform)
 
       val bCopy = molB.clone
       transform.applyTo(bCopy)

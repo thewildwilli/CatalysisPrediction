@@ -1,5 +1,6 @@
 package prog
 
+``import docking.DockLog
 import docking.dockscore._
 import docking.docksearch._
 import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
@@ -60,8 +61,9 @@ object DockMain {
     if (dockArgs.randomInit)
       doRandomRotation(molB, chan)
 
+    val dockLog = new DockLog(chan, enabled = dockArgs.workers == 1)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
-    (proc { dockResult = docker.dock(molA, molB.clone, chan); chan.close } ||
+    (proc { dockResult = docker.dock(molA, molB.clone, dockLog); chan.close } ||
       showActions(chan, jmolPanel, dockArgs))()
 
     val docked = dockResult._1
