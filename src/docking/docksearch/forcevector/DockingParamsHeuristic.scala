@@ -20,7 +20,7 @@ object DockingParamsHeuristic {
       result.ignoreAHydrogens = false
     } else if (molA.atoms.size < 300) {
       // Small molecule
-      result.threshold = 1.0e-5
+      result.threshold = 1.0e-3
       result.surface = 0
       result.permeability = 0
       result.geometricForceWeight = 2.5/10.0
@@ -30,7 +30,7 @@ object DockingParamsHeuristic {
       result.ignoreAHydrogens = false
     } else if (molA.atoms.size < 2000) {
       // Large molecule
-      result.threshold = 1.0e-5
+      result.threshold = 1.0e-2
       result.surface = 1.4
       result.permeability = 0.9
       result.geometricForceWeight = 5/10.0
