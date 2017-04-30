@@ -23,7 +23,7 @@
 #-a 3htb/3HTB_protein.pdb -b 3htb/3HTB_ligand.pdb -out 3htb/3htb_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 50 -scorer ff --randominit -workers 8
 
 #    -- 3BWA --
-#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 8
-#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 8
-#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 -scorer ff --randominit -workers 8
-#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 50 -scorer ff --randominit -workers 8
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker forcevector --randominit -workers 8
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -maxiters 50 --randominit -workers 8
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -workers 8
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -workers 8

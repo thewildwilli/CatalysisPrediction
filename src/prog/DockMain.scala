@@ -65,7 +65,7 @@ object DockMain {
 
     val docked = dockResult._1
     val score = dockResult._2
-    (docked, getRMSD(docked, dockArgs.fullPathsRef), score)
+    (docked, getRMSD(docked, dockArgs), score)
   }
 
   def showActions(chan: ?[Any], panel: JmolPanel, dockArgs: DockArgs) = proc {
@@ -86,11 +86,11 @@ object DockMain {
     }
   }
 
-  def getRMSD(docked: Molecule, fullPathsRef: Seq[String]) = {
-    jmolPanel.openFiles(fullPathsRef)
-    (for (i <- fullPathsRef.indices) yield {
+  def getRMSD(docked: Molecule, dockArgs: DockArgs) = {
+    jmolPanel.openFiles(dockArgs.fullPathsRef, dockArgs.pdbAddHydrogens)
+    (for (i <- dockArgs.fullPathsRef.indices) yield {
       val refMol = JmolMoleculeReader.read(jmolPanel, i)
-      (fullPathsRef(i), docked.rmsd(refMol))
+      (dockArgs.fullPathsRef(i), docked.rmsd(refMol))
     }).minBy(_._2)
   }
 
