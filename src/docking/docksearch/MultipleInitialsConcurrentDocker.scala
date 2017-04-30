@@ -1,21 +1,15 @@
 package docking.docksearch
 
-import docking.initials.GlobeInitialsGenerator
+import docking.initials.InitialsGenerator
 import docking.Docker
 import io.threadcso._
 import model._
 import profiling.Profiler
 
-/**
-  * @param initialConfigLevel: 0 => only translation, 1 => orientations in 2D, 2 => orientations in 3D.
-  *                         For angle=90 degrees, 0 gives 6 initial configurations, 1 gives 36 and 2 gives 144.
- */
-class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
-                                       angRad: Double,
-                                       initialConfigLevel: Integer,
-                                       val workers: Int = 8) extends Docker {
 
-  val initials = new GlobeInitialsGenerator(initialConfigLevel, angRad)
+class MultipleInitialsConcurrentDocker(val createDocker : () => Docker,
+                                       val initials: InitialsGenerator,
+                                       val workers: Int = 8) extends Docker {
 
   type DockTask = (Molecule, Molecule, Transform, ![Any])
   type DockResult = (Molecule, Double)

@@ -3,6 +3,7 @@ package prog
 import docking.dockscore._
 import docking.docksearch._
 import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
+import docking.initials.{GlobeInitialsGenerator, RandomInitials}
 import io.Mol2Writer
 import io.threadcso._
 import jmolint.JmolCmds._
@@ -18,7 +19,7 @@ object DockMain {
     "-out (B's output path, mol2 format) " +
     " [-dir d] [--randominit] [-workers w] [-ref a,b,c,...]" +
     "-docker (ehc|forcevector) [--consolelog] [--nogui] " +
-    " [-initangle a] [initlevel i]" +
+    " [-initials (globe {angle} {level} ¦ (random {number})]"
     " [-maxiters m]" +
     " [--ignoreAhydrogens] " +
     " [-surface s] " +
@@ -100,8 +101,8 @@ object DockMain {
     * enhanced to use reflection.
     */
   def getDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
-      new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB, dockArgs), dockArgs.initAngle,
-        dockArgs.initConfigLevel, dockArgs.workers)
+      new MultipleInitialsConcurrentDocker(() => getInnerDocker(molA, molB, dockArgs),
+        getInitialsGenerator(dockArgs), dockArgs.workers)
   }
 
   private def getInnerDocker(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
@@ -121,6 +122,13 @@ object DockMain {
       case _ => sys.error(usage)
     }
   }
+
+  private def getInitialsGenerator(dockArgs: DockArgs) =
+    if (dockArgs.initials == "globe")
+      new GlobeInitialsGenerator(dockArgs.initConfigLevel, dockArgs.initAngle)
+    else if (dockArgs.initials == "random")
+      new RandomInitials(dockArgs.initNumber)
+    else ???
 
   def getFFParams(molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
     val params = DockingParamsHeuristic.estimate(molA, molB)
@@ -169,12 +177,24 @@ object DockMain {
           case "-workers" => dockArgs.workers = args(i+1).toInt; i += 2; Profiler.setWorkers(dockArgs.workers + 8)
           case "-ref" => dockArgs.pathRefs = args(i+1); i += 2
           case "--randominit" => dockArgs.randomInit = true; i += 1
-          case "-initangle" => dockArgs.initAngle = Math.toRadians(args(i + 1).toDouble); i += 2
-          case "-initlevel" => dockArgs.initConfigLevel = args(i + 1).toInt; i += 2
           case "-docker" => dockArgs.dockerName = args(i + 1); i += 2
           case "--consolelog" => dockArgs.consoleLog = true; i += 1
           case "-surface" => dockArgs.surface = args(i + 1).toDouble; dockArgs.surfaceIsSet = true; i += 2
           case "--pdbAddHydrogens" => dockArgs.pdbAddHydrogens = true; i += 1
+
+          // Initials:
+          case "-initials" =>
+            dockArgs.initials = args(i + 1)
+            dockArgs.initials match {
+              case "globe" =>
+                dockArgs.initAngle = Math.toRadians(args(i + 2).toDouble)
+                dockArgs.initConfigLevel = args(i + 3).toInt
+                i += 4
+              case "random" =>
+                dockArgs.initNumber = args(i+2).toInt
+                i += 3
+              case unknown => sys.error(s"Unknown initials type: $unknown, $usage")
+            }
 
           // Hill Climbing:
           case "-maxiters" => dockArgs.maxIters = args(i+1).toInt; i+=2
@@ -237,9 +257,14 @@ object DockMain {
     var scorerName = ""
     var consoleLog = false
     var liveGui = true
-    var initAngle = Math.toRadians(90.0)
-    var initConfigLevel = 0
-    var randomInit = false
+
+    var initials = "globe"  // either globe or random
+    var initAngle = Math.toRadians(90.0)  // only for globe
+    var initConfigLevel = 0 // only for globe
+    var initNumber = 10  // only for random
+
+
+    var randomInit = false  // shuffle B molecule at the start
     var workers = 1
 
     var viewInitCmds = Seq[String]()

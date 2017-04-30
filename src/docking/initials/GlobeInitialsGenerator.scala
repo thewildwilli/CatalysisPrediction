@@ -31,17 +31,11 @@ class GlobeInitialsGenerator(initialConfigLevel: Integer,
             new Rotate(newCentre, o, secondAngle)     // rotate on the axis of the orientation
           )
 
-          // need to apply these transforms for the next step
+          // need to apply these transforms for the approach part
           val bCopy = molB.clone
           transform.applyTo(bCopy)
 
-          // get closest pair of atoms and translate B to get as close as possible to A
-          val (a, b)  = (for (a <- molA.atoms; b <- bCopy.atoms) yield (a,b)).minBy(pair => pair._1.distTo(pair._2))
-          val distance = Math.max(VanDerWaalsRadii(a.element), VanDerWaalsRadii(b.element))
-          val bToA = a.coords - b.coords
-          val approach = new Translate(bToA - bToA * distance / norm(bToA))
-
-          result ::= new MultiTransform(transform.transforms :+ approach :_*)
+          result ::= new MultiTransform(transform.transforms :+ approach(molA, bCopy) :_*)
         }
       }
     }
