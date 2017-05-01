@@ -1,6 +1,6 @@
 package prog
 
-``import docking.DockLog
+import docking.DockLog
 import docking.dockscore._
 import docking.docksearch._
 import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
