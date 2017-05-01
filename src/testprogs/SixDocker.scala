@@ -24,7 +24,6 @@ object SixDocker {
     // Now create a molecule with both A's and B's atoms
     System.out.println("outputting to " + args(2))
     val result: Molecule = molA.clone
-    result.setElement("O")
     import scala.collection.JavaConversions._
     for (bAtom <- molBDocked.JAtoms.values) result.JAtoms.put(bAtom.id, bAtom)
     new XyzWriter(args(2)).write(result)

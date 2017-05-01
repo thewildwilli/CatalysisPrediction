@@ -1,5 +1,6 @@
 package jmolint
 
+import breeze.linalg.DenseVector
 import model._
 
 
@@ -39,14 +40,4 @@ object JmolMoleculeReader {
 
     new Molecule(atoms.values)
   }
-
-  /*def read(m: Model) = {
-    m.
-    val atomList = ArrayBuffer[Atom]()
-    for (i <- 0 until atomCol.getAtomCount()){
-      val point = atomCol.getAtomPoint3f(i)
-      atomList.append(new Atom(atomCol.getElementSymbol(i), point.x, point.y, point.z))
-    }
-    new Molecule(atomList)
-  }*/
 }

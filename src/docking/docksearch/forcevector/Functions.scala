@@ -9,7 +9,7 @@ object Functions {
       hBondDistance + 2 * surface
     else
       (a.radius + b.radius) * 0.9 + 2 * surface
-    //(if (a.isElement("H") || b.isElement("H")) 0.0 else 2 * surface)
+    //(if (a.isH || b.isH) 0.0 else 2 * surface)
   }
 
   def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)

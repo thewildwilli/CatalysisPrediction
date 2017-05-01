@@ -8,9 +8,6 @@ object SurfaceAtoms2DMiniTest {
     val reader: MoleculeReader = new Pdb2DReader(args(0))
     val m: Molecule = reader.read
     m.computeSurfaceAtoms2D()
-    for (a <- m.atoms)
-      if (a.isSurface)
-        a.setElement("N")
     new XyzWriter(args(1)).write(m)
   }
 }

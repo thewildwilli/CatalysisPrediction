@@ -2,21 +2,28 @@
 
 package model
 
-import breeze.linalg.{DenseMatrix, DenseVector}
+import breeze.linalg._
+import profiling.Profiler
 
 import collection.JavaConverters._
 
-class Molecule(var atomMap: Map[Int, Atom]) {
+class Molecule(atomSeq: Iterable[Atom]) {
+  var atomMap = Map[Int, Atom]()
+  for (a <- atomSeq) this.atomMap += (a.id -> a)
 
-  def this(){ this (Map[Int, Atom]()) }
-  def this(l: Iterable[Atom]) { this(); for (a <- l) this.atomMap += (a.id -> a) }
-
+  // Atoms collections:
   def apply(i: Int) = atomMap(i)
   def atoms: Iterable[Atom] = atomMap.values
-  def atoms(ignoreHydrogen: Boolean) = atomMap.values.filter(a => !(ignoreHydrogen && a.isElement("H")))
+  private def getAtoms(ignoreHydrogen: Boolean) = atomMap.values.filter(a => !(ignoreHydrogen && a.isH))
+  private lazy val nonHydrogenAtoms = getAtoms(true).toList // cache
+  def atoms(ignoreHydrogen: Boolean): Iterable[Atom] = if (ignoreHydrogen) nonHydrogenAtoms else atoms
+
+  // Surface and inner atoms:
+  private def getSurfaceAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => a.isSurface && !(ignoreHydrogen && a.isH))
+  private lazy val allSurfaceAtoms = getSurfaceAtoms(false).toList  // cache
+  private lazy val nonHydrogenSurfaceAtoms = getSurfaceAtoms(true).toList  // cache
   def surfaceAtoms: Iterable[Atom] = surfaceAtoms(false)
-  def surfaceAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => a.isSurface && !(ignoreHydrogen && a.isElement("H")))
-  def innerAtoms(ignoreHydrogen: Boolean): Iterable[Atom] = atoms.filter(a => !a.isSurface && !(ignoreHydrogen && a.isElement("H")))
+  def surfaceAtoms(ignoreHydrogen: Boolean) = if (ignoreHydrogen) nonHydrogenSurfaceAtoms else allSurfaceAtoms
 
   def atomsBoundTo(a: Atom) = a.bonds.map(i => atomMap(i))
 
@@ -61,7 +68,11 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   def transform(m: DenseMatrix[Double]) = {
     for (a <- atoms)
       a.transform(m)
-    _geometricCentre = None         // could update the centre too
+    if (_geometricCentre.isDefined) {
+      // transform geometric centre as well:
+      val updatedCentre = m * DenseVector.vertcat(_geometricCentre.get, DenseVector(1.0))
+      _geometricCentre = Some(updatedCentre(0 to 2))
+    }
   }
 
   var _geometricCentre: Option[DenseVector[Double]] = None
@@ -76,7 +87,7 @@ class Molecule(var atomMap: Map[Int, Atom]) {
   var _radius: Option[Double] = None
   def getRadius = {
     val centre = getGeometricCentre
-    if (_radius == None)
+    if (_radius.isEmpty)
       _radius = Some(atoms.map(a => a.distTo(centre)).max)
     _radius.get
   }
@@ -127,11 +138,6 @@ class Molecule(var atomMap: Map[Int, Atom]) {
     m._geometricCentre = this._geometricCentre;
     m._radius = this._radius
     m
-  }
-
-  def setElement(e: String) = {
-    for (a <- this.atoms)
-      a.setElement(e)
   }
 
   /** Adds clones of all atoms from b to this. Modifies this molecule and returns itself */

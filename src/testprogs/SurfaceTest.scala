@@ -13,10 +13,6 @@ object SurfaceTest {
     jmolPanel.openFiles(List(args(0)))
     val mol = JmolMoleculeReader.read(jmolPanel, 0)
 
-    for (a <- mol.atoms) {
-      a.setElement(if (a.isSurface) "C" else "O")
-    }
-
     new Mol2Writer(args(1)).write(mol)
     sys.exit(0)
   }

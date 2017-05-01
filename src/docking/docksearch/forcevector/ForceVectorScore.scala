@@ -23,7 +23,7 @@ class ForceVectorScore(val params: DockingParams,
     * @return
     */
   def getScore(molA: Molecule, molB: Molecule, onlyTargetRadius: Boolean) = {
-    if (avgBondEnergy.isNaN)
+    if (params.bondForceWeight > 0 && avgBondEnergy.isNaN)
       avgBondEnergy = getAvgBondEnergy(molA, molB)
 
     def hScore(vectToSpot: DenseVector[Double]) = {
@@ -50,7 +50,7 @@ class ForceVectorScore(val params: DockingParams,
           val n = actualDistance / opt
 
           if (params.geometricForceWeight > 0)
-            if (!a.isElement("H") && !b.isElement("H"))
+            if (!a.isH && !b.isH)
               totalGeometricScore += explog2(n * explog2.maxX) / explog2.maxY
 
           if (params.electricForceWeight > 0) {
@@ -94,7 +94,7 @@ class ForceVectorScore(val params: DockingParams,
         totalHBondScore * params.hydrogenBondsForceWeight +
         totalBondStrengthScore * params.bondForceWeight
     //println(s"SCORES: geo: ${totalGeometricScore * geometricForceWeight}, electric: ${totalElectricScore * electricForceWeight}, hbond: ${totalHBondScore * hydrogenBondsForceWeight}, bondstrength: ${totalBondStrengthScore * bondForceWeight}")
-    totalScore / (Math.min(aCount, bCount))
+    totalScore / Math.min(aCount, bCount)
   }
 
   def getAvgBondEnergy(molA: Molecule, molB: Molecule) =

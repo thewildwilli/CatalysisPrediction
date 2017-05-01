@@ -1,7 +1,7 @@
 package testprogs
 
 // Created by Ernesto on 27/05/2016.
-import docking.{DockLog, Docker}
+import docking.{DockLog}
 import docking.dockscore.SurfaceDistanceScorer
 import docking.dockscore.Scorer
 import docking.docksearch.FourInitialsDocker2D
@@ -23,7 +23,6 @@ object FourDocker {
     // Now create a molecule with both A's and B's atoms
     System.out.println("outputting to " + args(2))
     val result: Molecule = molA.clone
-    result.setElement("O")
     import scala.collection.JavaConversions._
     for (bAtom <- molBDocked.JAtoms.values) result.JAtoms.put(bAtom.id, bAtom)
     new XyzWriter(args(2)).write(result)

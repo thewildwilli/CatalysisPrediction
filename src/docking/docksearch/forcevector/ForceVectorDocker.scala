@@ -69,19 +69,18 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     while (!done){
       val forces = Profiler.time("getForces") { getForces(molA, molB) }             // it is a list of pairs (atomB, force)
 
-      val (translation, _) = Profiler.time("getTranslation") { getTranslation(forces) }
-      Profiler.time("translate") { molB.translate(translation) }
+      val (translation, _) = getTranslation(forces)
+       molB.translate(translation)
       log.action(new Translate(translation))
 
-      val (axis, angle) = Profiler.time("getRotation") {  getRotation(molB.getGeometricCentre, forces) }
-      Profiler.time("rotate") {  molB.rotate(molB.getGeometricCentre, axis, angle)}
+      val (axis, angle) = getRotation(molB.getGeometricCentre, forces)
+      molB.rotate(molB.getGeometricCentre, axis, angle)
       log.action(new Rotate(molB.getGeometricCentre, axis, angle))
 
       Profiler.time("updateState") {   updateState(i, molA, molB)       }  // updates done and all other algorithm control variables
       i+=1
     }
     (bestDock, bestScore)
-//    (molB, currIterScore)
   }
 
   private def updateState(i: Integer, molA: Molecule, molB: Molecule)  = {
@@ -187,24 +186,26 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     val maxCover = Int.MaxValue// minDist + (maxDist - minDist) * 0.2
 
     val forces = for (atomB <- molB.surfaceAtoms) yield {
-      var forceOnAtomB = DenseVector(0.0, 0.0, 0.0)
+      var forceOnAtomB = DenseVector.zeros[Double](3)
 
       for (atomA <- molA.atoms(params.ignoreAHydrogens)){
         val opt = optimalDistance(atomA, atomB, params.surface)
-        val cover = (
+        val cover =
           if (approachPhase)
             maxCover
           else
             opt * minCoverage
-        )
 
-        val actualDistance = atomA.distTo(atomB)
-        if (actualDistance <= cover) {
+        // cache these values for reuse:
+        val (actual, bToA, dir) = atomB.distDifDir(atomA)
+        if (actual <= cover) {
           if (atomA.isSurface) {
-            forceOnAtomB += atomToAtomForce(atomA, atomB, molA, molB)
-            atomWithinMinCover |= actualDistance <= opt * minCoverage;
+            forceOnAtomB :+= atomToAtomForce(atomA, atomB, molA, molB, opt, actual, bToA, dir)
+            atomWithinMinCover |= actual <= opt * minCoverage;
           } else {
-            forceOnAtomB += (1-params.permeability) * getPenetrationPenaltyForce(atomA, atomB)
+            val penalisation = getPenetrationPenaltyForce(atomA, atomB, opt, actual, bToA, dir)
+            if (penalisation.isDefined)
+              forceOnAtomB :+= (1 - params.permeability) * penalisation.get
           }
         }
       }
@@ -220,7 +221,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     val allAtoms = molA.atomsBoundTo(atomA) ++ molB.atomsBoundTo(atomB)
     val actualDistance = atomA.distTo(atomB)
     !allAtoms.exists(a => (a ne atomA) && (a ne atomB)
-      && !a.isElement("H")
+      && !a.isH
       && a.distTo(atomA) < actualDistance
       && a.distTo(atomB) < actualDistance
       && Geometry.distToLine(atomA.coords, atomB.coords, a.coords) < a.radius * 0.8
@@ -229,11 +230,11 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
 
   /** Calculates the total force that molA exerts on atomB: the sum
     * of the forces each atom in a exerts on atomB   */
-  private def molToAtomForce(molA: Molecule, atomB: Atom, molB: Molecule) = {
-    molA.surfaceAtoms(params.ignoreAHydrogens)
-      .map(atomA => atomToAtomForce(atomA, atomB, molA, molB))
-      .reduce((a,b) => a+b)
-  }
+//  private def molToAtomForce(molA: Molecule, atomB: Atom, molB: Molecule) = {
+//    molA.surfaceAtoms(params.ignoreAHydrogens)
+//      .map(atomA => atomToAtomForce(atomA, atomB, molA, molB))
+//      .reduce((a,b) => a+b)
+//  }
 
   /** calculates the force that atomA exerts on atomB
     * This force has 2 components:
@@ -245,23 +246,21 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     *     Different forces attract if the distance is farther than the optimal distance.
     * */
   private def atomToAtomForce(atomA: Atom, atomB: Atom,
-                              molA: Molecule, molB: Molecule): DenseVector[Double] = {
-    val dif = atomA.coords - atomB.coords;                    // direction from b to a
-    val actualDistance = norm(dif)
-    val dir = dif / actualDistance;                                // normalized to length 1
-    val optimal = optimalDistance(atomA, atomB, params.surface)
+                              molA: Molecule, molB: Molecule,
+                              optimal: Double, actual: Double,
+                              bToA: DenseVector[Double],
+                              dir: DenseVector[Double]): DenseVector[Double] = {
 
-    val geometricForce = if (params.geometricForceWeight > 0) dir * getGeometricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
-    val electricForce = if (params.electricForceWeight > 0) dir * getElectricForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
-    val hydrogenBondsForce = if (params.hydrogenBondsForceWeight > 0) getHydrogenBondsForce(atomA, atomB, molA, molB, actualDistance) else DenseVector(0.0,0.0,0.0)
-    val bondForce = if (params.bondForceWeight > 0) dir * getBondForceNorm(atomA, atomB, actualDistance, optimal) else DenseVector(0.0,0.0,0.0)
-
-    val force =     // weighted result:
-      geometricForce * params.geometricForceWeight +
-        electricForce * params.electricForceWeight +
-        hydrogenBondsForce * params.hydrogenBondsForceWeight +
-        bondForce * params.bondForceWeight
-
+    // staggered in-place updates proved to be fastest option by far
+    val force = DenseVector.zeros[Double](3)
+    if (params.geometricForceWeight > 0)
+      force :+= dir * (getGeometricForceNorm(atomA, atomB, actual, optimal) * params.geometricForceWeight)
+    if (params.electricForceWeight > 0)
+      force :+= dir * (getElectricForceNorm(atomA, atomB, actual, optimal) * params.electricForceWeight)
+    if (params.hydrogenBondsForceWeight > 0)
+      force :+= getHydrogenBondsForce(atomA, atomB, molA, molB, actual) * params.hydrogenBondsForceWeight
+    if (params.bondForceWeight > 0)
+      force :+= dir * (getBondForceNorm(atomA, atomB, actual, optimal) * params.bondForceWeight)
     force
   }
 
@@ -272,7 +271,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
   private def getGeometricForceNorm(atomA: Atom, atomB: Atom, actualDistance: Double, optimal: Double) = {
     // This function is similar to SurfaceDistanceScorer, except that on ideal distance it returns 0.
     // The root is 1, so normalize such that optimal distance --> 1
-    if (atomA.isElement("H") || atomB.isElement("H"))
+    if (atomA.isH || atomB.isH)
       0.0
     else {
       val normalized = actualDistance / optimal
@@ -326,30 +325,16 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
       0.0
   }
 
-  private def getPenetrationPenaltyForce(atomA: Atom, atomB: Atom) = {
-    val actualDistance = atomA.distTo(atomB)
-    val penalizationDistance = (atomA.radius + atomB.radius) * 0.9
-    if ( (!atomA.isSurface || !atomB.isSurface) &&
-      !atomA.isElement("H") && !atomB.isElement("H") &&
-      actualDistance < penalizationDistance) {
-      val dif = atomA.coords - atomB.coords;                         // direction from b to a
-      val dir = dif / actualDistance;                                // normalized to length 1
-      val normalized = actualDistance/penalizationDistance
-      dir * Math.log(normalized)
-    } else
-      DenseVector(0.0, 0.0, 0.0)
+  private def getPenetrationPenaltyForce(atomA: Atom, atomB: Atom, opt: Double,
+                                         actual: Double, bToA: DenseVector[Double],
+                                         dir: DenseVector[Double]) = {
+    if (!atomA.isH && !atomB.isH && (!atomA.isSurface || !atomB.isSurface)) {
+      val penalizationDistance = (atomA.radius + atomB.radius) * 0.9
+      if (actual < penalizationDistance) {
+        val normalized = actual / penalizationDistance
+        val penalisationForce = dir * Math.log(normalized)
+        Some(penalisationForce)
+      } else None
+    } else None
   }
-
-  /* --- Scoring --- */
-
-
-
-
-
-
-  /* --- Distance Functions --- */
-
-
-
-
 }

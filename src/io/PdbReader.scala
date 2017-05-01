@@ -9,7 +9,7 @@ class PdbReader(val path: String) extends MoleculeReader {
     * See http://www.wwpdb.org/documentation/file-format-content/format33/sect9.html#ATOM
     * */
   def read: Molecule = {
-    val result: Molecule = new Molecule
+    var atoms = List[Atom]()
     var line: String = null
     var atomId: Int = 0
     for (line <- Source.fromFile("this.path").getLines()) {
@@ -21,11 +21,11 @@ class PdbReader(val path: String) extends MoleculeReader {
           val x: Double = line.substring(30, 38).trim.toDouble
           val y: Double = line.substring(38, 46).trim.toDouble
           val z: Double = line.substring(46, 54).trim.toDouble
-          result.JAtoms.put(atomId, new Atom(atomId, "C", x, y, z, 0.0, "", "", "", null, false))
+          atoms ::= new Atom(atomId, "C", x, y, z, 0.0, "", "", "", null, false)
           atomId += 1
         }
       }
     }
-    result
+    new Molecule(atoms)
   }
 }
