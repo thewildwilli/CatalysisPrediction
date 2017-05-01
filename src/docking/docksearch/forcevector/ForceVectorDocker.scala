@@ -59,7 +59,8 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     atomWithinMinCover = false
     shortestDistance = Double.NegativeInfinity
     forceShortestDistance = Double.PositiveInfinity
-    avgBondEnergy = scorer.getAvgBondEnergy(molA, molB)
+    if (params.bondForceWeight > 0)
+      avgBondEnergy = scorer.getAvgBondEnergy(molA, molB)
 
     //println(s"Docking from pos $startingPos")
     startingPos+=1
