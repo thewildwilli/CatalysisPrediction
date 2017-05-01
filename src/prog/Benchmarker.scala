@@ -20,7 +20,9 @@ object Benchmarker {
     var i = 1
     for (line <- cmds ) {
       val cmd = line.trim
-      if (!cmd.startsWith("#") && !cmd.isEmpty) {
+      if (cmd.isEmpty)
+        println()
+      else if (!cmd.startsWith("#")) {
         val dockArgs = DockMain.parseArgs(cmd.split(" "))
         print(s"Line $i: ")
         Profiler.clear
