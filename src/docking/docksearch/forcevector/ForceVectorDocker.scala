@@ -204,7 +204,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
             forceOnAtomB :+= atomToAtomForce(atomA, atomB, molA, molB, opt, actual, bToA, dir)
             atomWithinMinCover |= actual <= opt * minCoverage;
           } else {
-            val penalisation = getPenetrationPenaltyForce(atomA, atomB, opt, actual, bToA, dir)
+            val penalisation = getPenetrationPenaltyForce(atomA, atomB, actual, bToA, dir)
             if (penalisation.isDefined)
               forceOnAtomB :+= (1 - params.permeability) * penalisation.get
           }
@@ -326,9 +326,8 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
       0.0
   }
 
-  private def getPenetrationPenaltyForce(atomA: Atom, atomB: Atom, opt: Double,
-                                         actual: Double, bToA: DenseVector[Double],
-                                         dir: DenseVector[Double]) = {
+  private def getPenetrationPenaltyForce(atomA: Atom, atomB: Atom, actual: Double,
+                                         bToA: DenseVector[Double], dir: DenseVector[Double]) = {
     if (!atomA.isH && !atomB.isH && (!atomA.isSurface || !atomB.isSurface)) {
       val penalizationDistance = (atomA.radius + atomB.radius) * 0.9
       if (actual < penalizationDistance) {
