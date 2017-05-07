@@ -201,7 +201,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
         val (actual, bToA, dir) = atomB.distDifDir(atomA)
         if (actual <= cover) {
           if (atomA.isSurface) {
-            forceOnAtomB :+= atomToAtomForce(atomA, atomB, molA, molB, opt, actual, bToA, dir)
+            forceOnAtomB :+= atomToAtomForce(atomA, atomB, molA, molB, opt, actual, dir)
             atomWithinMinCover |= actual <= opt * minCoverage;
           } else {
             val penalisation = getPenetrationPenaltyForce(atomA, atomB, actual, bToA, dir)
@@ -249,7 +249,6 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
   private def atomToAtomForce(atomA: Atom, atomB: Atom,
                               molA: Molecule, molB: Molecule,
                               optimal: Double, actual: Double,
-                              bToA: DenseVector[Double],
                               dir: DenseVector[Double]): DenseVector[Double] = {
 
     // staggered in-place updates proved to be fastest option by far
