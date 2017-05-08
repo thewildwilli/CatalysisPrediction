@@ -39,16 +39,12 @@ class GeometricForce(val weight: Double, surface: Double) extends Force {
                      dir: DenseVector[Double]): Option[DenseVector[Double]] = {
     // This function is similar to SurfaceDistanceScorer, except that on ideal distance it returns 0.
     // The root is 1, so normalize such that optimal distance --> 1
-    if (atomA.isH || atomB.isH)
-      None
-    else {
-      val optimal = optimalDistance(atomA, atomB, surface)
+      val optimal = atomA.radius + atomB.radius + 2 * surface
       val normalized = actualDist / optimal
       if (atomA.isSurface && atomB.isSurface)
-        score += explog2(normalized * explog2.maxX) / explog2.maxY
-      val force = explog(normalized)  // explog(normalized / (softness * 3 + 1))
+        score += expsquare(normalized * expsquare.maxX) / expsquare.maxY
+      val force = expsquare(normalized)
       Some(dir * force)
-    }
   }
 }
 
