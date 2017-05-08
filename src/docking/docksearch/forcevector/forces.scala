@@ -41,8 +41,7 @@ class GeometricForce(val weight: Double, surface: Double) extends Force {
     // The root is 1, so normalize such that optimal distance --> 1
       val optimal = atomA.radius + atomB.radius + 2 * surface
       val normalized = actualDist / optimal
-      if (atomA.isSurface && atomB.isSurface)
-        score += expsquare(normalized * expsquare.maxX) / expsquare.maxY
+      score += expsquare(normalized * expsquare.maxX) / expsquare.maxY
       val force = expsquare(normalized)
       Some(dir * force)
   }
