@@ -12,9 +12,19 @@ object Functions {
     //(if (a.isH || b.isH) 0.0 else 2 * surface)
   }
 
-  def expsquare(x: Double) = Math.exp(-Math.pow(x,2))*(Math.pow(x,2)-1)
+  object expsquare {
+    // Max of expsquare is reached at x=sqrt(2), y=0.13533528323661267. The root is 1.0.
+    def apply(x: Double) = Math.exp(-Math.pow(x, 2)) * (Math.pow(x, 2) - 1)
+    val maxX = Math.sqrt(2.0)
+    val maxY = 0.13533528323661267
+  }
 
-  def explog(x: Double) = Math.exp(-Math.pow(x,2))*Math.log(x)    // Max of explog is reached at 1.327864011995167
+  object explog {
+    // Max of explog is reached at x=1.327864011995167, y=0.048630065613819703
+    def apply(x: Double) = Math.exp(-Math.pow(x, 2)) * Math.log(x)
+    val maxX = 1.327864011995167
+    val maxY = 0.048630065613819703
+  }
 
   def minusExpOverX(x: Double) = - Math.exp(-x) * 0.1 / x
 
