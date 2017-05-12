@@ -14,42 +14,54 @@ object Benchmarker {
   var commandsPath = "benchmarkcmds.txt"
   var printClosestRefCount = false
 
+  var progressInitials: Iterable[Int] = List[Int]()
+
+  val csvPath = new SimpleDateFormat("YYYY.MM.dd_HH.mm.ss").format(new Date()) + ".csv"
+
   def main(args: Array[String]): Unit = {
     parseBenchmarkerArgs(args)
-
     val cmds = scala.io.Source.fromFile(commandsPath).getLines.toSeq
-    var i = 1
-    val csvPath = new SimpleDateFormat("YYYY.MM.dd_HH.mm.ss").format(new Date()) + ".csv"
 
+    var i = 1
     for (line <- cmds ) {
       val (experiment, cmd) = getExperimentAndCmd(line)
       if (cmd.isEmpty)
         println()
       else if (!cmd.startsWith("#")) {
-        val dockArgs = DockMain.parseArgs(cmd.split(" "))
-        print(s"Line $i: ")
-        Profiler.clear
-        var rmsdAvg = 0.0
-
-        // Count how many times each reference was the closest:
-        val closestRefMap = Map[String, Int]().withDefaultValue(0)
-        var rmsds = List[Double]()
-
-        for (_ <- 0 until repeats) {
-          val (_, (closestRef, rmsd), _) = DockMain.doMainDock(dockArgs)
-          print(".")
-          rmsds ::= rmsd
-          closestRefMap(closestRef) += 1
+        if (progressInitials.size > 0) {
+          for (initNumber <- progressInitials) {
+            val extendedCmd = cmd + s" -initials random $initNumber"
+            runExperiment(experiment, i, extendedCmd)
+          }
         }
-        val avgTime = Profiler.getTimes("dock").toDouble / repeats
-
-        val initNumber = if (dockArgs.initials == "globe") dockArgs.initConfigLevel else dockArgs.initNumber
-        reportToConosole(cmd, avgTime, rmsds, closestRefMap)
-        reportToCsvFile(csvPath, experiment, dockArgs.initials, initNumber, avgTime, rmsds, closestRefMap)
+        else runExperiment(experiment, i, cmd)
       }
       i += 1
     }
     sys.exit(0)
+  }
+
+  private def runExperiment(experiment: String, lineNumber: Int,  cmd: String): Unit = {
+    val dockArgs = DockMain.parseArgs(cmd.split(" "))
+    print(s"Line $lineNumber: ")
+    Profiler.clear
+    var rmsdAvg = 0.0
+
+    // Count how many times each reference was the closest:
+    val closestRefMap = Map[String, Int]().withDefaultValue(0)
+    var rmsds = List[Double]()
+
+    for (_ <- 0 until repeats) {
+      val (_, (closestRef, rmsd), _) = DockMain.doMainDock(dockArgs)
+      print(".")
+      rmsds ::= rmsd
+      closestRefMap(closestRef) += 1
+    }
+    val avgTime = Profiler.getTimes("dock").toDouble / repeats
+
+    val initNumber = if (dockArgs.initials == "globe") dockArgs.initConfigLevel else dockArgs.initNumber
+    reportToConosole(cmd, avgTime, rmsds, closestRefMap)
+    reportToCsvFile(csvPath, experiment, dockArgs.initials, initNumber, avgTime, rmsds, closestRefMap)
   }
 
   private def getExperimentAndCmd(line: String) = {
@@ -111,6 +123,9 @@ object Benchmarker {
         case "-r" => repeats = args(i + 1).toInt;i += 2
         case "-path" => commandsPath = args(i + 1);i += 2
         case "-closestRefCount" => printClosestRefCount = true; i += 1
+        case "-progressInitials" =>
+          progressInitials = args(i+1).split(",").map(s => s.toInt);
+          i += 2
         case _ => sys.error("wrong args")
       }
     }
