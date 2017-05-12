@@ -1,0 +1,29 @@
+# H20
+#-a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#-a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#-a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+# -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker chain -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+
+#  -- Complementary single nucleotide --
+#-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker forcevector --randominit -workers 24
+#-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -maxiters 50 --randominit -workers 24
+#-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -workers 24
+#-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -workers 24
+
+#   -- Complementary Hexamers --
+# -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+#-a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+
+#   -- 3HTB --
+-a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 24
+#-a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 24
+#-a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 -scorer ff --randominit -workers 24
+#-a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 50 -scorer ff --randominit -workers 24
+
+#    -- 3BWA --
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker forcevector --randominit -workers 24
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -maxiters 50 --randominit -workers 24
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker ehc -maxiters 50 -scorer ff --randominit -workers 24
+#-a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 -docker chain -maxiters 50 -scorer ff --randominit -workers 24
