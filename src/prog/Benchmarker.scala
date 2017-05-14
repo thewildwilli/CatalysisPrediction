@@ -20,14 +20,14 @@ object Benchmarker {
 
   def main(args: Array[String]): Unit = {
     parseBenchmarkerArgs(args)
-    val cmds = scala.io.Source.fromFile(commandsPath).getLines.toSeq
+    val lines = scala.io.Source.fromFile(commandsPath).getLines.toSeq
 
     var i = 1
-    for (line <- cmds ) {
+    for (line <- lines ) if (!line.startsWith("#")) {
       val (experiment, cmd) = getExperimentAndCmd(line)
       if (cmd.isEmpty)
         println()
-      else if (!cmd.startsWith("#")) {
+      else {
         if (progressInitials.size > 0) {
           for (initNumber <- progressInitials) {
             val extendedCmd = cmd + s" -initials random $initNumber"
