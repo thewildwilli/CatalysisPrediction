@@ -63,7 +63,7 @@ object DockMain {
 
     val dockLog = new DockLog(chan, enabled = dockArgs.workers == 1)
     var dockResult = (null.asInstanceOf[Molecule], 0.0)
-    (proc { dockResult = docker.dock(molA, molB.clone, dockLog); chan.close } ||
+    (proc { dockResult = docker.dock(molA, molB.clone, dockLog); chan ! "end" } ||
       showActions(chan, jmolPanel, dockArgs))()
 
     val docked = dockResult._1
@@ -80,12 +80,14 @@ object DockMain {
           case a: Action => val cmds = JmolCmds.cmds(a); panel.exec(cmds:_*); cmds
           case "save" => panel.exec(JmolCmds.save); "save"
           case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(dockArgs.viewInitCmds); "reset"
+          case "end" => chan.closeIn; "end"
           case other => other.toString
         }
         if (dockArgs.consoleLog)
           println(s)
         ()
       }
+      sleepms(100)
     }
   }
 
