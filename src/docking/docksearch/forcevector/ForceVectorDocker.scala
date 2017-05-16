@@ -244,7 +244,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
       val penalizationDistance = (atomA.radius + atomB.radius) * 0.9
       if (actual < penalizationDistance) {
         val normalized = actual / penalizationDistance
-        val penalisationForce = dir * Math.log(normalized)
+        val penalisationForce = dir * Math.log(normalized)  // negative
         Some(penalisationForce)
       } else None
     } else None
