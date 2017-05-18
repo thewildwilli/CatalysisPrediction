@@ -14,7 +14,7 @@ object Benchmarker {
   var commandsPath = "benchmarkcmds.txt"
   var printClosestRefCount = false
 
-  var progressInitials: Iterable[Int] = List[Int]()
+  var initials: Iterable[Int] = List[Int]()
 
   val csvPath = new SimpleDateFormat("YYYY.MM.dd_HH.mm.ss").format(new Date()) + ".csv"
 
@@ -28,8 +28,8 @@ object Benchmarker {
       if (cmd.isEmpty)
         println()
       else {
-        if (progressInitials.size > 0) {
-          for (initNumber <- progressInitials) {
+        if (initials.size > 0) {
+          for (initNumber <- initials) {
             val extendedCmd = cmd + s" -initials random $initNumber"
             runExperiment(experiment, i, extendedCmd)
           }
@@ -123,8 +123,8 @@ object Benchmarker {
         case "-r" => repeats = args(i + 1).toInt;i += 2
         case "-path" => commandsPath = args(i + 1);i += 2
         case "-closestRefCount" => printClosestRefCount = true; i += 1
-        case "-progressInitials" =>
-          progressInitials = args(i+1).split(",").map(s => s.toInt);
+        case "-initials" =>
+          initials = args(i+1).split(",").map(s => s.toInt);
           i += 2
         case _ => sys.error("wrong args")
       }
