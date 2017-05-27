@@ -1,6 +1,6 @@
 package prog
 
-import docking.DockLog
+import docking.{Docker, DockLog}
 import docking.dockscore._
 import docking.docksearch._
 import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
@@ -56,36 +56,48 @@ object DockMain {
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val docker = getDocker(molA, molB, dockArgs)
-    val chan = OneOneBuf[Any](5000)
-
-    if (dockArgs.randomInit)
-      doRandomRotation(molB, chan)
-
-    val dockLog = new DockLog(chan, enabled = dockArgs.workers == 1)
-    var dockResult = (null.asInstanceOf[Molecule], 0.0)
-    (proc { dockResult = docker.dock(molA, molB.clone, dockLog); chan.closeOut } ||
-      showActions(chan, jmolPanel, dockArgs))()
-
+    val dockResult = getDockResult(docker, molA, molB, dockArgs)
     val docked = dockResult._1
     val score = dockResult._2
     (docked, getRMSD(docked, dockArgs), score)
   }
 
+  def getDockResult(docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+    if (dockArgs.liveGui && dockArgs.workers == 1)
+      getDockResultWithLiveUI(docker, molA, molB, dockArgs)
+    else {
+      if (dockArgs.randomInit)
+        doRandomRotation(molB)
+      docker.dock(molA, molB.clone, DockLog.dummy)
+    }
+  }
+
+  def getDockResultWithLiveUI(docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+    val chan = OneOneBuf[Any](5000)
+    val dockLog = new DockLog(chan, enabled = dockArgs.workers == 1)
+
+    if (dockArgs.randomInit)
+      doRandomRotation(molB, chan)
+
+    var dockResult = (null.asInstanceOf[Molecule], 0.0)
+    (proc { dockResult = docker.dock(molA, molB.clone, dockLog); chan.closeOut } ||
+      showActions(chan, jmolPanel, dockArgs))()
+    dockResult
+  }
+
   def showActions(chan: ?[Any], panel: JmolPanel, dockArgs: DockArgs) = proc {
     repeat {
       val msg = chan?()
-      if (dockArgs.liveGui && dockArgs.workers <= 1) {
-        val s = msg match
-        {
-          case a: Action => val cmds = JmolCmds.cmds(a); panel.exec(cmds:_*); cmds
-          case "save" => panel.exec(JmolCmds.save); "save"
-          case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(dockArgs.viewInitCmds); "reset"
-          case other => other.toString
-        }
-        if (dockArgs.consoleLog)
-          println(s)
-        sleepms(100)
+      val s = msg match
+      {
+        case a: Action => val cmds = JmolCmds.cmds(a); panel.exec(cmds:_*); cmds
+        case "save" => panel.exec(JmolCmds.save); "save"
+        case "reset" => panel.exec(JmolCmds.reset); panel.execSeq(dockArgs.viewInitCmds); "reset"
+        case other => other.toString
       }
+      if (dockArgs.consoleLog)
+        println(s)
+      sleepms(100)
     }
     chan.closeIn
   }
@@ -243,10 +255,11 @@ object DockMain {
     dockArgs
   }
 
-  private def doRandomRotation(m: Molecule, log: ![Any]): Unit = {
+  private def doRandomRotation(m: Molecule, log: ![Any] = null): Unit = {
     val (axis, angle) = Geometry.randomAxisAndAngle
     m.rotate(m.getGeometricCentre, axis, angle)
-    log! new Rotate(m.getGeometricCentre, axis, angle)
+    if (log != null)
+      log! new Rotate(m.getGeometricCentre, axis, angle)
   }
 
   class DockArgs {

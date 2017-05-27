@@ -14,3 +14,7 @@ class DockLog(val log: ![Any], val enabled: Boolean = true) {
   def action(t: Action) = send(t)
   def other(thing: Any) = send(thing)  // used to report anything else
 }
+
+object DockLog {
+  def dummy = new DockLog(null, false)
+}
