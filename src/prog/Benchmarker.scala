@@ -50,18 +50,20 @@ object Benchmarker {
     // Count how many times each reference was the closest:
     val closestRefMap = Map[String, Int]().withDefaultValue(0)
     var rmsds = List[Double]()
+    var scores = List[Double]()
 
     for (_ <- 0 until repeats) {
-      val (_, (closestRef, rmsd), _) = DockMain.doMainDock(dockArgs)
+      val (_, (closestRef, rmsd), score) = DockMain.doMainDock(dockArgs)
       print(".")
       rmsds ::= rmsd
+      scores ::= score
       closestRefMap(closestRef) += 1
     }
     val avgTime = Profiler.getTimes("dock").toDouble / repeats
 
     val initNumber = if (dockArgs.initials == "globe") dockArgs.initConfigLevel else dockArgs.initNumber
     reportToConosole(cmd, avgTime, rmsds, closestRefMap)
-    reportToCsvFile(csvPath, experiment, dockArgs.initials, initNumber, avgTime, rmsds, closestRefMap)
+    reportToCsvFile(csvPath, experiment, dockArgs.initials, initNumber, avgTime, rmsds, closestRefMap, scores)
   }
 
   private def getExperimentAndCmd(line: String) = {
@@ -87,14 +89,15 @@ object Benchmarker {
   private def reportToCsvFile(csvPath: String, experiment: String,
                               initType: String, initNumber: Int,
                               avgTime: Double, rmsds: Seq[Double],
-                              closestRefMap: Map[String, Int]): Unit ={
+                              closestRefMap: Map[String, Int],
+                              scores: Seq[Double]): Unit ={
 
     def writeCSVHeader(csvPath: String): Unit = {
       println(s"creating $csvPath")
       val fw: FileWriter = new FileWriter(csvPath, true)
       try {
         fw.write(String.join(",", "Experiment", "InitType", "InitNumber", "TimeAvg(ms)", "RMSDAvg",
-          "RMSDStdDev", "RMSDMin", "RMSDMax") + "\n")
+          "RMSDStdDev", "RMSDMin", "RMSDMax", "ScoreAvg", "ScoreStdDev") + "\n")
       } finally {fw.close()}
     }
 
@@ -104,14 +107,15 @@ object Benchmarker {
     val rmsdStdDev = stdDev(rmsds)
     val rmsdMin = rmsds.min
     val rmsdMax = rmsds.max
-
+    val scoreAvg = scores.sum / scores.length
+    val scoreStdDev = stdDev(scores)
 
     // write row
     val fw: FileWriter = new FileWriter(csvPath, true)
     try {
       fw.write(String.join(",", experiment, initType, initNumber.toString,
         avgTime.toString, rmsdAvg.toString, rmsdStdDev.toString,
-        rmsdMin.toString, rmsdMax.toString) + "\n")
+        rmsdMin.toString, rmsdMax.toString, scoreAvg.toString, scoreStdDev.toString) + "\n")
     } finally {fw.close()}
   }
 
