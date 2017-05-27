@@ -21,12 +21,12 @@ object DockingParamsHeuristic {
       result.ignoreAHydrogens = false
     } else if (molSize < 300) {
       // Small molecule
-      result.threshold = 1.0e-3
+      result.threshold = 1.0e-1
       result.surface = 0
       result.permeability = 0
-      result.geometricForceWeight = 2.5/10.0
-      result.electricForceWeight = 0.5/10.0
-      result.hydrogenBondsForceWeight = 7/10.0
+      result.geometricForceWeight = 0/10.0
+      result.electricForceWeight = 0/10.0
+      result.hydrogenBondsForceWeight = 10/10.0
       result.bondForceWeight = 0.0
       result.ignoreAHydrogens = false
     } else if (molSize < 2000) {
