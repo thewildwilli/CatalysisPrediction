@@ -27,7 +27,7 @@ object DockMain {
     " [-permeability p]" +
     " [-balance atomic,electric,hydrogenbond,bondstrength] " +
     " [-threshold t] " +
-    " [--pdbAddHydrogens] "
+    " [--pdbAddHydrogens] [--exit]"
 
   val frame = new JmolFrame(500, 500, false)
   val jmolPanel = frame.getPanel
@@ -41,6 +41,8 @@ object DockMain {
     jmolPanel.execSeq(dockArgs.viewInitCmds)
     println(s"Finished with RMSD: $rmsd ($closestRef), score: $score")
     Profiler.report
+    if (dockArgs.exit)
+      sys.exit(0)
   }
 
 
@@ -220,6 +222,7 @@ object DockMain {
           case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
           case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
           case "--nogui" => dockArgs.liveGui = false; i += 1
+          case "--exit" => dockArgs.exit = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 4)
@@ -308,6 +311,8 @@ object DockMain {
     var hydrogenBondsForceWeight = 0.25
     var bondForceWeight = 0.25
     var balanceIsSet = false  // becomes true if overridden in program args
+
+    var exit = false // exit after dock
 
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
       Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&
