@@ -1,0 +1,166 @@
+package prog
+
+import docking.{Docker, DockLog}
+import docking.dockscore._
+import docking.docksearch._
+import docking.docksearch.forcevector.{DockingParamsHeuristic, ForceVectorDocker, ForceVectorScore}
+import docking.initials.{GlobeInitialsGenerator, RandomInitials}
+import io.Mol2Writer
+import io.threadcso._
+import jmolint.JmolCmds._
+import jmolint.{JmolCmds, JmolFrame, JmolMoleculeReader, JmolPanel}
+import model.{Geometry, Molecule, Rotate}
+import opt.Action
+import profiling.Profiler
+/**
+  * Created by willi on 19-06-2017.
+  */
+
+object SurfaceatomQuick {
+  val usage = "USAGE: scala DockMain -a (path to A) " +
+    "-b (path to B) " +
+    "-out (B's output path, mol2 format) " +
+    " [-dir d] [--randominit] [-workers w] [-ref a,b,c,...]" +
+    "-docker (ehc|forcevector) [--consolelog] [--nogui] " +
+    " [-initials (globe {angle} {level} ¦ (random {number})]"
+  " [-maxiters m]" +
+    " [--ignoreAhydrogens] " +
+    " [-surface s] " +
+    " [-permeability p]" +
+    " [-balance atomic,electric,hydrogenbond,bondstrength] " +
+    " [-threshold t] " +
+    " [--pdbAddHydrogens] [--exit]"
+
+  val frame = new JmolFrame(500, 500, false)
+  val jmolPanel = frame.getPanel
+
+  def main(args: Array[String]): Unit = {
+    val dockArgs = parseArgs(args)
+    val (MolASurfaceAtoms, MolASurfaceAtoms) = getsurfaceNums(dockArgs)
+
+    //     // write docked b to file
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
+    jmolPanel.execSeq(dockArgs.viewInitCmds)
+    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score")
+    Profiler.report
+    if (dockArgs.exit)
+      sys.exit(0)
+  }
+
+  def getsurfaceNums(dockArgs: DockArgs) = {
+    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB), dockArgs.pdbAddHydrogens)
+    jmolPanel.execSync(
+      selectModel("2.1"),
+      setLog(0),
+      zoom(50),
+      save
+    )
+
+    val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
+    val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
+    var num = 0
+
+    val SurfaceNums = for (atomB <- molB.surfaceAtoms) yield {
+
+
+      for (atomA <- molA.surfaceAtoms) {
+        num = num + 1
+      }
+
+      val MolASurfaceAtoms = num
+      num = 0
+
+      for (atomB <- molB.surfaceAtoms) {
+        num = num + 1
+      }
+
+      val MolBSurfaceAtoms = num
+
+      (MolASurfaceAtoms, MolASurfaceAtoms)
+    }
+    (MolASurfaceAtoms, MolASurfaceAtoms)
+
+  }
+
+
+  def parseArgs(args: Array[String]) = {
+    val dockArgs = new DockArgs
+    var i = 0
+
+    try {
+      while (i < args.length) {
+        args(i).trim match {
+          case "" => i += 1
+          case "-a" => dockArgs.pathA = args(i + 1); i += 2
+          case "-b" => dockArgs.pathB = args(i + 1); i += 2
+          case "-out" => dockArgs.pathOut = args(i + 1); i += 2
+          case "-dir" => dockArgs.dir = args(i + 1); i += 2
+          case "-workers" => dockArgs.workers = args(i + 1).toInt; i += 2; Profiler.setWorkers(dockArgs.workers + 8)
+          case "-ref" => dockArgs.pathRefs = args(i + 1); i += 2
+          case "--randominit" => dockArgs.randomInit = true; i += 1
+          case "-docker" => dockArgs.dockerName = args(i + 1); i += 2
+          case "--consolelog" => dockArgs.consoleLog = true; i += 1
+          case "-surface" => dockArgs.surface = args(i + 1).toDouble; dockArgs.surfaceIsSet = true; i += 2
+          case "--pdbAddHydrogens" => dockArgs.pdbAddHydrogens = true; i += 1
+
+          // Initials:
+          case "-initials" =>
+            dockArgs.initials = args(i + 1)
+            dockArgs.initials match {
+              case "globe" =>
+                dockArgs.initAngle = Math.toRadians(args(i + 2).toDouble)
+                dockArgs.initConfigLevel = args(i + 3).toInt
+                i += 4
+              case "random" =>
+                dockArgs.initNumber = args(i + 2).toInt
+                i += 3
+              case unknown => sys.error(s"Unknown initials type: $unknown, $usage")
+            }
+
+          // Hill Climbing:
+          case "-maxiters" => dockArgs.maxIters = args(i + 1).toInt; i += 2
+          case "-scorer" => dockArgs.scorerName = args(i + 1); i += 2
+
+          // FF:
+          case "-threshold" => dockArgs.threshold = args(i + 1).toDouble; dockArgs.thresholdIsSet = true; i += 2
+          case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
+          case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
+          case "--nogui" => dockArgs.liveGui = false; i += 1
+          case "--exit" => dockArgs.exit = true; i += 1
+          case "-balance" =>
+            val balanceStrs = args(i + 1).split(',')
+            if (balanceStrs.length != 4)
+              sys.error(usage)
+
+            val atomicForceWeight = balanceStrs(0).toDouble
+            val electricForceWeight = balanceStrs(1).toDouble
+            val hydrogenBondsForceWeight = balanceStrs(2).toDouble
+            val bondForceWeight = balanceStrs(3).toDouble
+            val sum = atomicForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight
+
+            if (atomicForceWeight < 0 || electricForceWeight < 0 ||
+              hydrogenBondsForceWeight < 0 || bondForceWeight < 0 || sum == 0.0)
+              sys.error(usage)
+
+            dockArgs.geometricForceWeight = atomicForceWeight / sum
+            dockArgs.electricForceWeight = electricForceWeight / sum
+            dockArgs.hydrogenBondsForceWeight = hydrogenBondsForceWeight / sum
+            dockArgs.bondForceWeight = bondForceWeight / sum
+
+            dockArgs.balanceIsSet = true
+            i += 2
+          case unknown => sys.error(s"Unknown argument: $unknown, $usage")
+        }
+      }
+    }
+    catch {
+      case e: Exception => sys.error(s"${e.getMessage}, $usage")
+    }
+
+    if (!dockArgs.valid)
+      sys.error(usage)
+
+    dockArgs.viewInitCmds = getViewInitCmds(dockArgs)
+    dockArgs
+  }
+}

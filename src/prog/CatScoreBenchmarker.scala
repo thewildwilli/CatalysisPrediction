@@ -11,7 +11,7 @@ import profiling.Profiler
 object CatScoreBenchmarker {
 
   var repeats = 10
-  var commandsPath = "benchmarkcmds.txt"
+  var commandsPath = "oxdockcommands.txt"
   var printClosestRefCount = false
 
   var initials: Iterable[Int] = List[Int]()
