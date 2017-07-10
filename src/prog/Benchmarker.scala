@@ -5,6 +5,7 @@ import java.io.{File, FileWriter}
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import jmolint.JmolFrame
 import profiling.Profiler
 
 // Created by Ernesto on 25/08/2016.
@@ -43,6 +44,7 @@ object Benchmarker {
 
   private def runExperiment(experiment: String, lineNumber: Int,  cmd: String): Unit = {
     val dockArgs = DockMain.parseArgs(cmd.split(" "))
+    val jmolPanel = new JmolFrame(500, 500, false, dockArgs.liveGuiEnabled).getPanel
     print(s"Line $lineNumber: ")
     Profiler.clear
     var rmsdAvg = 0.0
@@ -53,7 +55,7 @@ object Benchmarker {
     var scores = List[Double]()
 
     for (_ <- 0 until repeats) {
-      val (_, (closestRef, rmsd), score) = DockMain.doMainDock(dockArgs)
+      val (_, (closestRef, rmsd), score) = DockMain.doMainDock(jmolPanel, dockArgs)
       print(".")
       rmsds ::= rmsd
       scores ::= score

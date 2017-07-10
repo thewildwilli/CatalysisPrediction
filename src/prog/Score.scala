@@ -14,7 +14,8 @@ object Score {
     if (dockArgs.dockerName != "forcevector")
       throw new Exception("Only forcevector currently supported")
 
-    val jmolPanel = new JmolFrame(500, 500, false).getPanel
+    val visible = !dockArgs.exit
+    val jmolPanel = new JmolFrame(500, 500, false, visible).getPanel
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB), dockArgs.pdbAddHydrogens)
 
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
