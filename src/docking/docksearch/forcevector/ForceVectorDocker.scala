@@ -41,6 +41,26 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
 
   val scorer = new ForceVectorScore(params, minCoverage)
 
+  def getTerms = {
+    var terms = List[Force]()
+    if (params.geometricForceWeight > 0)
+      terms ::= new GeometricForce(params.geometricForceWeight, params.surface)
+    if (params.electricForceWeight > 0)
+      terms ::= new ElectricForce(params.electricForceWeight, params.surface)
+    if (params.hydrogenBondsForceWeight > 0)
+      terms ::= new HydrogenBondForce(params.hydrogenBondsForceWeight, params.ignoreAHydrogens)
+    terms
+  }
+
+  /**
+    * Scores a configuration. This is not directly used during docking.
+    */
+  def score(molA: Molecule, molB: Molecule) = {
+    val terms = getTerms
+    getForcesOnBAtoms(terms, molA, molB)
+    terms.map(f => f.weightedScore).sum
+  }
+
   /**  Docks b into a from b's initial position and orientation, using force vectors.
     *   Try to minimize score
     */
@@ -63,15 +83,7 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
     startingPos+=1
     bestDock = molB.clone
 
-    // initialise forces:
-    var forces = List[Force]()
-    if (params.geometricForceWeight > 0)
-      forces ::= new GeometricForce(params.geometricForceWeight, params.surface)
-    if (params.electricForceWeight > 0)
-      forces ::= new ElectricForce(params.electricForceWeight, params.surface)
-    if (params.hydrogenBondsForceWeight > 0)
-      forces ::= new HydrogenBondForce(params.hydrogenBondsForceWeight, params.ignoreAHydrogens)
-
+    val forces = this.getTerms
     var i = 1
     while (!done){
       val forceVectors = Profiler.time("getForces") { getForcesOnBAtoms(forces, molA, molB) }             // it is a list of pairs (atomB, force)
