@@ -29,14 +29,10 @@ object DockMain {
     " [-threshold t] " +
     " [--pdbAddHydrogens] [--exit]"
 
-  val frame = new JmolFrame(500, 500, false)
-  val jmolPanel = frame.getPanel
-
   def main(args: Array[String]): Unit = {
     val dockArgs = parseArgs(args)
-    val (docked, (closestRef, rmsd), score) = doMainDock(dockArgs)
-
-    print(score)
+    val jmolPanel = new JmolFrame(500, 500, false, dockArgs.liveGuiEnabled).getPanel
+    val (docked, (closestRef, rmsd), score) = doMainDock(jmolPanel, dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
@@ -47,8 +43,7 @@ object DockMain {
       sys.exit(0)
   }
 
-
-  def doMainDock(dockArgs: DockArgs) = {
+  def doMainDock(jmolPanel: JmolPanel, dockArgs: DockArgs) = {
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathB), dockArgs.pdbAddHydrogens)
     jmolPanel.execSync(
       selectModel("2.1"),
@@ -60,16 +55,15 @@ object DockMain {
     val molA: Molecule = JmolMoleculeReader.read(jmolPanel, 0)
     val molB: Molecule = JmolMoleculeReader.read(jmolPanel, 1)
     val docker = getDocker(molA, molB, dockArgs)
-    val dockResult = getDockResult(docker, molA, molB, dockArgs)
+    val dockResult = getDockResult(jmolPanel, docker, molA, molB, dockArgs)
     val docked = dockResult._1
     val score = dockResult._2
-    println(score)
-    (docked, getRMSD(docked, dockArgs), score)
+    (docked, getRMSD(jmolPanel, docked, dockArgs), score)
   }
 
-  def getDockResult(docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
-    if (dockArgs.liveGui && dockArgs.workers == 1)
-      getDockResultWithLiveUI(docker, molA, molB, dockArgs)
+  def getDockResult(jmolPanel: JmolPanel, docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+    if (dockArgs.liveGuiEnabled)
+      getDockResultWithLiveUI(jmolPanel, docker, molA, molB, dockArgs)
     else {
       if (dockArgs.randomInit)
         doRandomRotation(molB)
@@ -77,7 +71,7 @@ object DockMain {
     }
   }
 
-  def getDockResultWithLiveUI(docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
+  def getDockResultWithLiveUI(jmolPanel: JmolPanel, docker: Docker, molA: Molecule, molB: Molecule, dockArgs: DockArgs) = {
     val chan = OneOneBuf[Any](5000)
     val dockLog = new DockLog(chan, enabled = dockArgs.workers == 1)
 
@@ -107,7 +101,7 @@ object DockMain {
     chan.closeIn
   }
 
-  def getRMSD(docked: Molecule, dockArgs: DockArgs) = {
+  def getRMSD(jmolPanel: JmolPanel, docked: Molecule, dockArgs: DockArgs) = {
     jmolPanel.openFiles(dockArgs.fullPathsRef, dockArgs.pdbAddHydrogens)
     (for (i <- dockArgs.fullPathsRef.indices) yield {
       val refMol = JmolMoleculeReader.read(jmolPanel, i)
@@ -224,8 +218,8 @@ object DockMain {
           case "-threshold" => dockArgs.threshold = args(i + 1).toDouble; dockArgs.thresholdIsSet = true; i += 2
           case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
           case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
-          case "--nogui" => dockArgs.liveGui = false; i += 1
-          case "--exit" => dockArgs.exit = true; i += 1
+          case "--nogui" => dockArgs.liveGuiSelected = false; i += 1
+          case "--exit" => dockArgs.exitSelected = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 4)
@@ -278,7 +272,7 @@ object DockMain {
     var dockerName = ""
     var scorerName = ""
     var consoleLog = false
-    var liveGui = true
+    var liveGuiSelected = true
 
     var initials = "globe"  // either globe or random
     var initAngle = Math.toRadians(90.0)  // only for globe
@@ -315,7 +309,10 @@ object DockMain {
     var bondForceWeight = 0.25
     var balanceIsSet = false  // becomes true if overridden in program args
 
-    var exit = false // exit after dock
+    var exitSelected = false // exit after dock
+
+    def liveGuiEnabled = !this.exitSelected && this.liveGuiSelected && this.workers == 1
+    def exit = !this.liveGuiEnabled
 
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
       Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&
