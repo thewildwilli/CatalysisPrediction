@@ -36,6 +36,8 @@ object DockMain {
     val dockArgs = parseArgs(args)
     val (docked, (closestRef, rmsd), score) = doMainDock(dockArgs)
 
+    print(score)
+
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
     jmolPanel.execSeq(dockArgs.viewInitCmds)
@@ -61,6 +63,7 @@ object DockMain {
     val dockResult = getDockResult(docker, molA, molB, dockArgs)
     val docked = dockResult._1
     val score = dockResult._2
+    println(score)
     (docked, getRMSD(docked, dockArgs), score)
   }
 

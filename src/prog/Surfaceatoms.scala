@@ -39,7 +39,7 @@ object Surfaceatoms {
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
     jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
     jmolPanel.execSeq(dockArgs.viewInitCmds)
-    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score, molAsurfaceatoms: $molBsurfaceatoms, molBsurfaceatoms: $molBsurfaceatoms")
+    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score, molAsurfaceatoms: $molAsurfaceatoms, molBsurfaceatoms: $molBsurfaceatoms")
 
     Profiler.report
   }

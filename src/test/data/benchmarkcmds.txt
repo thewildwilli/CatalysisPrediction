@@ -1,24 +1,72 @@
 # H20
-warmup: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
-h20-ff: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
-h20-ehc: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
-h20-ehc-ff: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
-h20-chain: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker chain -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#warmup: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#h20-ff: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker forcevector --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#h20-ehc: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#h20-ehc-ff: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker ehc -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
+#h20-chain: -a h2o/h2oA.mol -b h2o/h2oB.mol -out h2o/h2oDocked.mol -docker chain -maxiters 50 -scorer ff --randominit -ref h2o/ref/r1.pdb,h2o/ref/r2.pdb,h2o/ref/r3.pdb,h2o/ref/r4.pdb,h2o/ref/r5.pdb,h2o/ref/r6.pdb,h2o/ref/r7.pdb,h2o/ref/r8.pdb -workers 24
 
 #  -- Complementary single nucleotide --
-nucleotide-ff:-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -ref compNucleo/ref_comp.pdb,compNucleo/ref_lig_1.pdb,compNucleo/ref_lig_2.pdb -docker forcevector --randominit -workers 24
-nucleotide-ehc:-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -ref compNucleo/ref_comp.pdb,compNucleo/ref_lig_1.pdb,compNucleo/ref_lig_2.pdb -docker ehc -maxiters 50 --randominit -workers 24
+#nucleotide-ff:-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -ref compNucleo/ref_comp.pdb,compNucleo/ref_lig_1.pdb,compNucleo/ref_lig_2.pdb -docker forcevector --randominit -workers 24
+#nucleotide-ehc:-a compNucleo/G_wc.mol2 -b compNucleo/C_wc.mol2 -out compNucleo/CDocked.mol2 -ref compNucleo/ref_comp.pdb,compNucleo/ref_lig_1.pdb,compNucleo/ref_lig_2.pdb -docker ehc -maxiters 50 --randominit -workers 24
 
 #   -- Complementary Hexamers --
-hexamer-ff: -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
-hexamer-ehc: -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+#hexamer-ff: -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker forcevector --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
+#hexamer-ehc: -a dna/GGCGCC_wc.mol2 -b dna/CCGCGG_wc.mol2 -out dna/docked.mol2 -docker ehc -maxiters 50 --randominit -ref dna/ref_comp.pdb,dna/ref_lig_1.pdb,dna/ref_lig_2.pdb -workers 24
 
 #   -- 3HTB --
-3HTB-ff: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 24
-3HTB-ehc: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 24
-3HTB-chain: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 20 -scorer ff --randominit -workers 24
+#3HTB-ff: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 24
+#3HTB-ehc: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 24
+#3HTB-chain: -a 3HTB/3HTB_protein.pdb -b 3HTB/3HTB_ligand.pdb -out 3HTB/3htb_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 20 -scorer ff --randominit -workers 24
 
 #    -- 3BWA --
-3BWA-ff: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 24
-3BWA-ehc: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 24
-3BWA-chain: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 20 -scorer ff --randominit -workers 24
+#3BWA-ff: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker forcevector --randominit -workers 24
+#3BWA-ehc: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker ehc -maxiters 50 --randominit -workers 24
+#3BWA-chain: -a 3bwa/3bwa_protein.pdb -b 3bwa/3bwa_ligand.pdb -out 3bwa/3bwa_docked.mol2 --pdbAddHydrogens -docker chain -maxiters 20 -scorer ff --randominit -workers 24
+
+
+# --- William test --
+#experiment 1: -a smallguy.pdb -b bigguy.pdb -out bigsmalldocked.mol2 -docker forcevector --randominit -workers 24 -balance 0.1,0.1,1,0
+#score: 0.9575660020818455
+#experiment 2: -a Molecule1.mol -b Molecule2.mol -out exp2.mol2 -docker forcevector --randominit -workers 1 -balance 0.1,0.1,1,0
+#score: 1.0581537425337892
+#experiment 3: -a Molecule14.mol -b Molecule15.mol -out exp3.mol2 -docker forcevector --randominit -workers 1 -balance 0.1,0.1,1,0
+# score: 1.5106393262641975
+
+
+
+
+
+
+### Run this
+
+#experiment 10-14: -a Molecule10.mol -b Molecule14.mol -out exp10-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 11-14: -a Molecule11.mol -b Molecule14.mol -out exp11-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 12-14: -a Molecule12.mol -b Molecule14.mol -out exp12-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 13-14: -a Molecule13.mol -b Molecule14.mol -out exp13-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 14-14: -a Molecule14.mol -b Molecule14.mol -out exp14-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 15-14: -a Molecule15.mol -b Molecule14.mol -out exp15-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 16-14: -a Molecule16.mol -b Molecule14.mol -out exp16-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 17-14: -a Molecule17.mol -b Molecule14.mol -out exp17-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 18-14: -a Molecule18.mol -b Molecule14.mol -out exp18-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 19-14: -a Molecule19.mol -b Molecule14.mol -out exp19-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 20-14: -a Molecule20.mol -b Molecule14.mol -out exp20-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 21-14: -a Molecule21.mol -b Molecule14.mol -out exp21-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 22-14: -a Molecule22.mol -b Molecule14.mol -out exp22-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 23-14: -a Molecule23.mol -b Molecule14.mol -out exp23-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+#experiment 24-14: -a Molecule24.mol -b Molecule14.mol -out exp24-14.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+
+
+experiment 1-1: -a Nucleotide1.mol -b Nucleotide1.mol -out exp-Nucleotide-1-1.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 2-1: -a Nucleotide2.mol -b Nucleotide1.mol -out exp-Nucleotide-2-1.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 3-1: -a Nucleotide3.mol -b Nucleotide1.mol -out exp-Nucleotide-3-1.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 4-1: -a Nucleotide4.mol -b Nucleotide1.mol -out exp-Nucleotide-4-1.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+
+experiment 2-2: -a Nucleotide2.mol -b Nucleotide2.mol -out exp-Nucleotide-2-2.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 3-2: -a Nucleotide3.mol -b Nucleotide2.mol -out exp-Nucleotide-3-2.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 4-2: -a Nucleotide4.mol -b Nucleotide2.mol -out exp-Nucleotide-4-2.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+
+experiment 3-3: -a Nucleotide3.mol -b Nucleotide3.mol -out exp-Nucleotide-3-3.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+experiment 4-3: -a Nucleotide4.mol -b Nucleotide3.mol -out exp-Nucleotide-4-3.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+
+experiment 4-4: -a Nucleotide4.mol -b Nucleotide4.mol -out exp-Nucleotide-4-4.mol2 -docker forcevector --randominit -workers 24 -balance 1.0,1.0,1,0
+
