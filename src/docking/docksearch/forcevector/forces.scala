@@ -87,7 +87,7 @@ class HydrogenBondForce(val weight: Double, ignoreAHydrogens: Boolean) extends F
     if (ignoreAHydrogens) {
       val vectToSpot = HydrogenBondForce.getVectToHBondSpot(atomB, atomA, molB)
       if (vectToSpot != null && atomA.isSurface && atomB.isSurface)
-        score += gaussian(norm(vectToSpot))
+        score += gaussian(norm(vectToSpot), 100.0)
 
       val aToBForceVector = getForce(vectToSpot, atomB, atomA)
       if (aToBForceVector.isDefined)
@@ -111,7 +111,7 @@ object HydrogenBondForce {
       val hNeighbour = hmol(h.bonds(0));
       if (hNeighbour.partialCharge < 0 && hNeighbour.isOneOf("F", "O", "N")) {
         val (_, _, dirToNeighbour) = h.distDifDir(hNeighbour)
-        val toSpot = -dirToNeighbour * hBondDistance // 1.8 Angtrom in the opposite direction
+        val toSpot = -dirToNeighbour * hBondDistance // 1.8 Angstroms in the opposite direction
         val spot = h.coords + toSpot
         spot - other.coords
       } else
@@ -124,7 +124,6 @@ object HydrogenBondForce {
   def canHBond(h: Atom, other: Atom) =
     h.isH && h.partialCharge > 0 && other.partialCharge < 0 &&
       h.bonds.size == 1 && other.isOneOf("F", "O", "N")
-
 }
 
 class BondForce(val weight: Double, molA: Molecule, molB: Molecule, surface: Double) extends Force() {
