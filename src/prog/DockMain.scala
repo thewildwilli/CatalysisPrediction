@@ -35,12 +35,16 @@ object DockMain {
     val (docked, (closestRef, rmsd), score) = doMainDock(jmolPanel, dockArgs)
 
     new Mol2Writer(dockArgs.fullPathOut).write(docked)      // write docked b to file
-    jmolPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
-    jmolPanel.execSeq(dockArgs.viewInitCmds)
-    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score")
     Profiler.report
+    println(s"Finished with RMSD: $rmsd ($closestRef), score: $score")
+
     if (dockArgs.exit)
       sys.exit(0)
+    else {
+      val resultsPanel = new JmolFrame(500, 500, false, true).getPanel
+      resultsPanel.openFiles(List(dockArgs.fullPathA, dockArgs.fullPathOut) ++ dockArgs.fullPathsRef)
+      resultsPanel.execSeq(dockArgs.viewInitCmds)
+    }
   }
 
   def doMainDock(jmolPanel: JmolPanel, dockArgs: DockArgs) = {
@@ -219,7 +223,7 @@ object DockMain {
           case "-permeability" => dockArgs.permeability = args(i + 1).toDouble; dockArgs.permeabilityIsSet = true; i += 2
           case "--ignoreAhydrogens" => dockArgs.ignoreAHydrogens = true; dockArgs.ignoreHydrogensIsSet = true; i += 1
           case "--nogui" => dockArgs.liveGuiSelected = false; i += 1
-          case "--exit" => dockArgs.exitSelected = true; i += 1
+          case "--exit" => dockArgs.exit = true; i += 1
           case "-balance" =>
             val balanceStrs = args(i+1).split(',')
             if (balanceStrs.length != 4)
@@ -309,10 +313,9 @@ object DockMain {
     var bondForceWeight = 0.25
     var balanceIsSet = false  // becomes true if overridden in program args
 
-    var exitSelected = false // exit after dock
+    var exit = false // exit after dock
 
-    def liveGuiEnabled = !this.exitSelected && this.liveGuiSelected && this.workers == 1
-    def exit = !this.liveGuiEnabled
+    def liveGuiEnabled = this.liveGuiSelected && this.workers == 1
 
     def valid = pathA != "" && pathB != "" && pathOut != "" && dockerName != "" &&
       Math.abs(geometricForceWeight + electricForceWeight + hydrogenBondsForceWeight + bondForceWeight - 1.0) < 1.0e-5 &&

@@ -87,7 +87,7 @@ class HydrogenBondForce(val weight: Double, ignoreAHydrogens: Boolean) extends F
     if (ignoreAHydrogens) {
       val vectToSpot = HydrogenBondForce.getVectToHBondSpot(atomB, atomA, molB)
       if (vectToSpot != null && atomA.isSurface && atomB.isSurface)
-        score += gaussian(norm(vectToSpot), 100.0)
+        score += gaussian(norm(vectToSpot))
 
       val aToBForceVector = getForce(vectToSpot, atomB, atomA)
       if (aToBForceVector.isDefined)
