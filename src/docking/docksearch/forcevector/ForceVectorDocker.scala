@@ -39,8 +39,6 @@ class ForceVectorDocker(val params: DockingParams) extends Docker {
   var shortestDistance = Double.NegativeInfinity
   var forceShortestDistance = Double.PositiveInfinity
 
-  val scorer = new ForceVectorScore(params, minCoverage)
-
   def getTerms = {
     var terms = List[Force]()
     if (params.geometricForceWeight > 0)
