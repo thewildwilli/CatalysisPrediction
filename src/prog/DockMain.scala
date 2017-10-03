@@ -127,7 +127,7 @@ object DockMain {
     val ffparams = getFFParams(molA, molB, dockArgs)
     val scorer =
       if (dockArgs.scorerName == "ff")
-        new ForceVectorScore(ffparams, 1.25, dockArgs.dockerName == "chain")
+        new ForceVectorScore(ffparams)
       else
         new SurfaceDistanceScorer(dockArgs.surface)
 
